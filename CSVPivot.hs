@@ -41,6 +41,11 @@ parseCommandsFromArgs args = map performParse args
 
 ------------------------------------
 
+-- 2 dimensional average over csv 
+avgBy :: Int -> [[Double]] -> Double
+avgBy i lst = flip (/) len $ foldl (+) 0.0 $ lst^..traverse.ix i
+  where len = (fromIntegral $ length lst) :: Double
+
 process :: String -> String
 process x = x
 
