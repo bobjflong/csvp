@@ -8,6 +8,7 @@ import Text.CSV
 import Debug.Trace
 import System.IO
 import Data.Maybe
+import Data.List (groupBy, sortBy, delete, intercalate)
 
 ------------------------------------
 -- Parsing the DSL for manipulating CSVs
@@ -59,6 +60,14 @@ parseStdinCSV csv = parseCSV source csv
 type PossibleNumber = Either String Double
 type PossibleNumberCSV = [[PossibleNumber]]
 
+possibleNumberToString :: PossibleNumber -> String
+possibleNumberToString (Left x) = x
+possibleNumberToString (Right x) = show x
+
+possibleNumberCSVToString :: PossibleNumberCSV -> String
+possibleNumberCSVToString x = intercalate "\n" $ map (intercalate ",") rows
+  where rows = map (map possibleNumberToString) x
+
 numCSV :: Simple Prism PossibleNumber Double
 numCSV = prism (\x -> (Right x) :: PossibleNumber) $ \ i ->
   case i of
@@ -67,7 +76,7 @@ numCSV = prism (\x -> (Right x) :: PossibleNumber) $ \ i ->
 
 string2PossibleNumber :: String -> PossibleNumber
 string2PossibleNumber str = case (reads str) :: [(Double, String)] of
-  [(a, "")] -> Right a
+  [(a, "")] -> review numCSV a
   _         -> Left str
 
 -- 2 dimensional average over CSV
@@ -81,12 +90,44 @@ avgBy i lst = flip (/) len $ summed
 csvToPossibleNumbers :: CSV -> PossibleNumberCSV
 csvToPossibleNumbers csv = mapped %~ mapped %~ string2PossibleNumber $ csv
 
+------------------------------------
+--  Grouping CSVs
+--
+
+data GroupedCSVRow = CSVContent PossibleNumberCSV | CSVGroup GroupedCSV
+type GroupedCSV    = [ GroupedCSVRow ]
+
+instance Show GroupedCSVRow where
+  show (CSVContent p) = possibleNumberCSVToString p
+  show (CSVGroup   g) = intercalate "\n\n" (map show g)
+
+rowEquivalence f x = \l r ->  f (l!!x) (r!!x)
+
+groupByCSVIndex :: Int -> PossibleNumberCSV -> [ GroupedCSVRow ]
+groupByCSVIndex x p = map CSVContent $ groupBy (rowEquivalence (==) x) $ sortBy (rowEquivalence compare x) p
+
+csvToGroupedCSV :: PossibleNumberCSV -> GroupedCSV
+csvToGroupedCSV x = [ CSVContent x ]
+
+groupedCSVToString :: GroupedCSV -> String
+groupedCSVToString x = intercalate "" $ map show x
+
+regroupGroupedCSVRow :: Int -> GroupedCSVRow -> GroupedCSVRow
+regroupGroupedCSVRow x (CSVContent p) = CSVGroup $ groupByCSVIndex x p 
+regroupGroupedCSVRow x (CSVGroup   g) = CSVGroup $ map (regroupGroupedCSVRow x) g
+
+regroupGroupedCSV :: Int -> GroupedCSV -> GroupedCSV
+regroupGroupedCSV x p = map (regroupGroupedCSVRow x) p
+
 main =
   do csv <- getContents
      case parseStdinCSV csv of
       Left err -> do hPutStr stderr $ show err
       Right parsed -> do
         commands <- getArgs
-        putStrLn $ show $ avgBy 3 (csvToPossibleNumbers parsed)
-
+        let parsedClean = delete [""] parsed
+        let res = regroupGroupedCSV 0 $ regroupGroupedCSV 1 $ csvToGroupedCSV $ csvToPossibleNumbers parsedClean
+        putStrLn "-----------------------"
+        putStrLn $ groupedCSVToString res
+        return ()
 
