@@ -47,7 +47,7 @@ parseCommands =
      return $ CommandList $ groupResult ++ summarizeResult
 
 parseCommandsFromArgs :: [String] -> [Either ParseError Command]
-parseCommandsFromArgs args = map performParse args
+parseCommandsFromArgs = map performParse
   where performParse arg = parse parseCommands source (arg ++ ";")
 
 ------------------------------------
