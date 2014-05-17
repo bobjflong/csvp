@@ -43,8 +43,8 @@ commandGroupPossibilities = try $ parseTransformer Grouper "group"
 parseCommands :: GenParser Char st Command
 parseCommands =
   do groupResult <- many $ commandGroupPossibilities
-     summarizeResult <- many $ commandSummarizePossibilities
-     return $ CommandList $ groupResult ++ summarizeResult
+     summarizeResult <- commandSummarizePossibilities
+     return $ CommandList $ groupResult ++ [summarizeResult]
 
 parseCommandsFromArgs :: [String] -> [Either ParseError Command]
 parseCommandsFromArgs = map performParse
@@ -79,9 +79,11 @@ string2PossibleNumber str = case (reads str) :: [(Double, String)] of
   [(a, "")] -> review numCSV a
   _         -> Left str
 
+type Summarizer = Int -> PossibleNumberCSV -> Double
+
 -- 2 dimensional average over CSV
 -- Throws an error if the user tries to summarize by a string
-avgBy :: Int -> PossibleNumberCSV -> Double
+avgBy :: Summarizer
 avgBy i lst = flip (/) len $ summed
   where len = (fromIntegral $ length converted) :: Double
         summed = sum converted
@@ -94,37 +96,54 @@ csvToPossibleNumbers csv = mapped %~ mapped %~ string2PossibleNumber $ csv
 --  Grouping CSVs
 --
 
-data GroupedCSVRow = CSVContent PossibleNumberCSV | CSVGroup GroupedCSV
+type SummarizeResult = Double
+
+summarizeDefault :: SummarizeResult
+summarizeDefault = 0
+
+data GroupedCSVRow = CSVContent SummarizeResult PossibleNumberCSV | CSVGroup GroupedCSV
 type GroupedCSV    = [ GroupedCSVRow ]
 
+summarize :: Summarizer -> Int -> GroupedCSVRow -> GroupedCSVRow
+summarize f d (CSVGroup xs) = CSVGroup $ map (summarize f d) xs
+summarize f d (CSVContent _ csv) = CSVContent (f d csv) csv 
+
+summarizeCSV :: Summarizer -> Int -> GroupedCSV -> GroupedCSV
+summarizeCSV f d = map (summarize f d)
+
 instance Show GroupedCSVRow where
-  show (CSVContent p) = possibleNumberCSVToString p
+  show (CSVContent _ p) = possibleNumberCSVToString p
   show (CSVGroup   g) = intercalate "\n\n" (map show g)
 
 rowEquivalence f x = \l r ->  f (l!!x) (r!!x)
 
 groupByCSVIndex :: Int -> PossibleNumberCSV -> [ GroupedCSVRow ]
-groupByCSVIndex x p = map CSVContent $ groupBy (rowEquivalence (==) x) $ sortBy (rowEquivalence compare x) p
+groupByCSVIndex x p = map (CSVContent summarizeDefault) $ groupBy (rowEquivalence (==) x) $ sortBy (rowEquivalence compare x) p
 
 csvToGroupedCSV :: PossibleNumberCSV -> GroupedCSV
-csvToGroupedCSV x = [ CSVContent x ]
+csvToGroupedCSV x = [ CSVContent summarizeDefault x ]
 
 groupedCSVToString :: GroupedCSV -> String
 groupedCSVToString x = intercalate "" $ map show x
 
 regroupGroupedCSVRow :: Int -> GroupedCSVRow -> GroupedCSVRow
-regroupGroupedCSVRow x (CSVContent p) = CSVGroup $ groupByCSVIndex x p 
+regroupGroupedCSVRow x (CSVContent _ p) = CSVGroup $ groupByCSVIndex x p 
 regroupGroupedCSVRow x (CSVGroup   g) = CSVGroup $ map (regroupGroupedCSVRow x) g
 
 regroupGroupedCSV :: Int -> GroupedCSV -> GroupedCSV
 regroupGroupedCSV x p = map (regroupGroupedCSVRow x) p
+
+------------------------------------
+-- Main
+--
 
 main =
   do csv <- getContents
      case parseStdinCSV csv of
       Left err -> do hPutStr stderr $ show err
       Right parsed -> do
-        commands <- getArgs
+        instructions <- getArgs
+        let commands = parseCommandsFromArgs instructions
         let parsedClean = delete [""] parsed
         let res = regroupGroupedCSV 0 $ regroupGroupedCSV 1 $ csvToGroupedCSV $ csvToPossibleNumbers parsedClean
         putStrLn "-----------------------"
