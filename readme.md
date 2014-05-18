@@ -20,7 +20,7 @@ jim,deposit,100
 
 To group by name, then subgroup by transaction type, then summarize by value, you'd simply run:
 
-``` cat test.csv | ./CSVPivot 'group 0; group 1; avg 2 ;' ```
+``` cat test.csv | ./CSVPivot 'group 0; group 1; avg 2;' ```
 
 <pre>
 bob,deposit,10.0
