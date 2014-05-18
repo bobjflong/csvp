@@ -1,6 +1,7 @@
 
 module Main where
 
+import Control.Monad.State
 import Control.Lens
 import Control.Lens.Prism
 import System.Environment
@@ -15,13 +16,20 @@ import Data.List (groupBy, sortBy, delete, intercalate)
 -- eg. 'groupby 2; groupby 1; avg 3;'
 --
 
-import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.Parsec hiding (State)
 
 data Command = Grouper Int |
                CommandList [Command] |
+               Noop |
                Averager Int deriving (Show)
 
 source = "(stdin)"
+
+command2Function :: Command -> (GroupedCSV -> GroupedCSV)
+command2Function (Grouper x)      = regroupGroupedCSV x
+command2Function (Averager x)     = summarizeCSV avgBy x
+command2Function (Noop)           = id
+command2Function (CommandList xs) = foldl (.) id (map command2Function $ reverse xs)
 
 separator  = many $ char ' '
 userIndex  = many $ digit
@@ -43,7 +51,7 @@ commandGroupPossibilities = try $ parseTransformer Grouper "group"
 parseCommands :: GenParser Char st Command
 parseCommands =
   do groupResult <- many $ commandGroupPossibilities
-     summarizeResult <- commandSummarizePossibilities
+     summarizeResult <- option Noop commandSummarizePossibilities
      return $ CommandList $ groupResult ++ [summarizeResult]
 
 parseCommandsFromArgs :: [String] -> [Either ParseError Command]
@@ -65,7 +73,7 @@ possibleNumberToString (Left x) = x
 possibleNumberToString (Right x) = show x
 
 possibleNumberCSVToString :: PossibleNumberCSV -> String
-possibleNumberCSVToString x = intercalate "\n" $ map (intercalate ",") rows
+possibleNumberCSVToString x = unlines $ map (intercalate ",") rows
   where rows = map (map possibleNumberToString) x
 
 numCSV :: Simple Prism PossibleNumber Double
@@ -112,7 +120,7 @@ summarizeCSV :: Summarizer -> Int -> GroupedCSV -> GroupedCSV
 summarizeCSV f d = map (summarize f d)
 
 instance Show GroupedCSVRow where
-  show (CSVContent _ p) = possibleNumberCSVToString p
+  show (CSVContent r p) = possibleNumberCSVToString p ++ "\n" ++  (show r)
   show (CSVGroup   g) = intercalate "\n\n" (map show g)
 
 rowEquivalence f x = \l r ->  f (l!!x) (r!!x)
@@ -134,6 +142,25 @@ regroupGroupedCSV :: Int -> GroupedCSV -> GroupedCSV
 regroupGroupedCSV x p = map (regroupGroupedCSVRow x) p
 
 ------------------------------------
+-- Grouping and summarizing multiple
+--
+
+type CSVTransformState = State GroupedCSV GroupedCSV
+
+transformCSV :: [Either ParseError Command] -> CSVTransformState
+transformCSV [] =
+  do result <- get
+     return result
+transformCSV (x:xs) =
+  do case x of
+       Left err -> error "Invalid command list"
+       Right cmd -> 
+         do result <- get
+            let command = command2Function cmd
+            put $ command result
+            transformCSV xs 
+
+------------------------------------
 -- Main
 --
 
@@ -145,8 +172,7 @@ main =
         instructions <- getArgs
         let commands = parseCommandsFromArgs instructions
         let parsedClean = delete [""] parsed
-        let res = regroupGroupedCSV 0 $ regroupGroupedCSV 1 $ csvToGroupedCSV $ csvToPossibleNumbers parsedClean
-        putStrLn "-----------------------"
-        putStrLn $ groupedCSVToString res
+        let res = csvToGroupedCSV $ csvToPossibleNumbers parsedClean
+        putStrLn $ groupedCSVToString $ evalState (transformCSV commands) res
         return ()
 
