@@ -51,8 +51,8 @@ commandGroupPossibilities = try $ parseTransformer Grouper "group"
 parseCommands :: GenParser Char st Command
 parseCommands =
   do groupResult <- many $ commandGroupPossibilities
-     summarizeResult <- option Noop commandSummarizePossibilities
-     return $ CommandList $ groupResult ++ [summarizeResult]
+     summarizeResult <- many $ commandSummarizePossibilities
+     return $ CommandList $ groupResult ++ summarizeResult
 
 parseCommandsFromArgs :: [String] -> [Either ParseError Command]
 parseCommandsFromArgs = map performParse
