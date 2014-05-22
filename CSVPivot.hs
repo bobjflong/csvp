@@ -101,16 +101,13 @@ csvToPossibleNumbers :: CSV -> PossibleNumberCSV
 csvToPossibleNumbers csv = mapped %~ mapped %~ string2PossibleNumber $ csv
 
 ------------------------------------
---  Grouping CSVs
+-- Summarizing CSV values
 --
 
 type SummarizeResult = Maybe Double
 
 summarizeDefault :: SummarizeResult
 summarizeDefault = Nothing
-
-data GroupedCSVRow = CSVContent SummarizeResult PossibleNumberCSV | CSVGroup GroupedCSV
-type GroupedCSV    = [ GroupedCSVRow ]
 
 summarize :: Summarizer -> Int -> GroupedCSVRow -> GroupedCSVRow
 summarize f d (CSVGroup xs) = CSVGroup $ map (summarize f d) xs
@@ -119,12 +116,20 @@ summarize f d (CSVContent _ csv) = CSVContent (Just (f d csv)) csv
 summarizeCSV :: Summarizer -> Int -> GroupedCSV -> GroupedCSV
 summarizeCSV f d = map (summarize f d)
 
+------------------------------------
+--  Grouping CSVs
+--
+
+data GroupedCSVRow = CSVContent SummarizeResult PossibleNumberCSV | CSVGroup GroupedCSV
+type GroupedCSV    = [ GroupedCSVRow ]
+
 instance Show GroupedCSVRow where
   show (CSVContent r p) = possibleNumberCSVToString p ++ (summary2string r)
     where summary2string Nothing = ""
           summary2string (Just x) = "\n" ++ (show x) ++ "\n"
   show (CSVGroup   g) = intercalate "\n" (map show g)
 
+rowEquivalence :: (a -> a -> t) -> Int -> [a] -> [a] -> t
 rowEquivalence f x = \l r ->  f (l!!x) (r!!x)
 
 groupByCSVIndex :: Int -> PossibleNumberCSV -> [ GroupedCSVRow ]
