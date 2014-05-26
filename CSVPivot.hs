@@ -21,6 +21,7 @@ import Text.ParserCombinators.Parsec hiding (State)
 data Command = Grouper Int |
                CommandList [Command] |
                Noop |
+               StdDever Int |
                Averager Int deriving (Show)
 
 source = "(stdin)"
@@ -28,6 +29,7 @@ source = "(stdin)"
 command2Function :: Command -> (GroupedCSV -> GroupedCSV)
 command2Function (Grouper x)      = regroupGroupedCSV x
 command2Function (Averager x)     = summarizeCSV avgBy x
+command2Function (StdDever x)     = summarizeCSV stddevBy x
 command2Function (Noop)           = id
 command2Function (CommandList xs) = foldl (.) id (map command2Function $ reverse xs)
 
@@ -44,7 +46,7 @@ parseTransformer f s =
      terminator
      return $ f $ read groupIx
 
-commandSummarizePossibilities = try $ parseTransformer Averager "avg"
+commandSummarizePossibilities = (try $ parseTransformer Averager "avg") <|> (try $ parseTransformer StdDever "stddev")
 
 commandGroupPossibilities = try $ parseTransformer Grouper "group"
 
@@ -97,6 +99,14 @@ avgBy i lst = flip (/) len $ summed
         summed = sum converted
         converted = lst^..traverse.ix i^..traverse.numCSV
 
+stddevBy :: Summarizer
+stddevBy i lst = sqrt $ (/) summed len
+  where avg = avgBy i lst
+        summed = sum fromAvg
+        len = (fromIntegral $ length converted) :: Double
+        fromAvg = map ((**2).(flip (-) avg)) converted
+        converted = lst^..traverse.ix i^..traverse.numCSV
+
 csvToPossibleNumbers :: CSV -> PossibleNumberCSV
 csvToPossibleNumbers csv = mapped %~ mapped %~ string2PossibleNumber $ csv
 
@@ -111,7 +121,7 @@ summarizeDefault = Nothing
 
 summarize :: Summarizer -> Int -> GroupedCSVRow -> GroupedCSVRow
 summarize f d (CSVGroup xs) = CSVGroup $ map (summarize f d) xs
-summarize f d (CSVContent _ csv) = CSVContent (Just (f d csv)) csv 
+summarize f d (CSVContent _ csv_to_summarize) = CSVContent (Just (f d csv_to_summarize)) csv_to_summarize
 
 summarizeCSV :: Summarizer -> Int -> GroupedCSV -> GroupedCSV
 summarizeCSV f d = map (summarize f d)
@@ -142,7 +152,7 @@ groupedCSVToString :: GroupedCSV -> String
 groupedCSVToString x = intercalate "" $ map show x
 
 regroupGroupedCSVRow :: Int -> GroupedCSVRow -> GroupedCSVRow
-regroupGroupedCSVRow x (CSVContent _ p) = CSVGroup $ groupByCSVIndex x p 
+regroupGroupedCSVRow x (CSVContent _ p) = CSVGroup $ groupByCSVIndex x p
 regroupGroupedCSVRow x (CSVGroup   g) = CSVGroup $ map (regroupGroupedCSVRow x) g
 
 regroupGroupedCSV :: Int -> GroupedCSV -> GroupedCSV
@@ -160,12 +170,12 @@ transformCSV [] =
      return result
 transformCSV (x:xs) =
   do case x of
-       Left err -> error "Invalid command list"
-       Right cmd -> 
+       Left _ -> error "Invalid command list"
+       Right cmd ->
          do result <- get
             let command = command2Function cmd
             put $ command result
-            transformCSV xs 
+            transformCSV xs
 
 ------------------------------------
 -- Main
@@ -182,4 +192,3 @@ main =
         let res = csvToGroupedCSV $ csvToPossibleNumbers parsedClean
         putStrLn $ groupedCSVToString $ evalState (transformCSV commands) res
         return ()
-

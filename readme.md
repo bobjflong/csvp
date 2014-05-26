@@ -2,7 +2,7 @@
 
 A command line dsl for transforming csv files.
 
-Currently csvp supports the ``` group ``` and ``` avg ``` commands. ```stddev``` coming soon.
+Currently csvp supports the ``` group ```, ``` avg ```, and ``` stddev ``` commands.
 
 ###Simple Example
 
