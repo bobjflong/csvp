@@ -98,17 +98,17 @@ extractColumn i lst = lst^..traverse.ix i^..traverse.numCSV
 -- Throws an error if the user tries to summarize by a string
 avgBy :: Summarizer
 avgBy i lst = flip (/) len $ summed
-  where len = (fromIntegral $ length converted) :: Double
-        summed = sum converted
-        converted = extractColumn i lst
+  where len = (fromIntegral $ length column) :: Double
+        summed = sum column
+        column = extractColumn i lst
 
 stddevBy :: Summarizer
 stddevBy i lst = sqrt $ (/) summed len
   where avg = avgBy i lst
         summed = sum fromAvg
-        len = (fromIntegral $ length converted) :: Double
-        fromAvg = map ((**2).(flip (-) avg)) converted
-        converted = extractColumn i lst
+        len = (fromIntegral $ length column) :: Double
+        fromAvg = map ((**2).(flip (-) avg)) column
+        column = extractColumn i lst
 
 csvToPossibleNumbers :: CSV -> PossibleNumberCSV
 csvToPossibleNumbers csv = mapped %~ mapped %~ string2PossibleNumber $ csv
