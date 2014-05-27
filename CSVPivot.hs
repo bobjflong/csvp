@@ -91,13 +91,16 @@ string2PossibleNumber str = case (reads str) :: [(Double, String)] of
 
 type Summarizer = Int -> PossibleNumberCSV -> Double
 
+extractColumn :: Int -> PossibleNumberCSV -> [Double]
+extractColumn i lst = lst^..traverse.ix i^..traverse.numCSV
+
 -- 2 dimensional average over CSV
 -- Throws an error if the user tries to summarize by a string
 avgBy :: Summarizer
 avgBy i lst = flip (/) len $ summed
   where len = (fromIntegral $ length converted) :: Double
         summed = sum converted
-        converted = lst^..traverse.ix i^..traverse.numCSV
+        converted = extractColumn i lst
 
 stddevBy :: Summarizer
 stddevBy i lst = sqrt $ (/) summed len
@@ -105,7 +108,7 @@ stddevBy i lst = sqrt $ (/) summed len
         summed = sum fromAvg
         len = (fromIntegral $ length converted) :: Double
         fromAvg = map ((**2).(flip (-) avg)) converted
-        converted = lst^..traverse.ix i^..traverse.numCSV
+        converted = extractColumn i lst
 
 csvToPossibleNumbers :: CSV -> PossibleNumberCSV
 csvToPossibleNumbers csv = mapped %~ mapped %~ string2PossibleNumber $ csv
