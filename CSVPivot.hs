@@ -21,7 +21,10 @@ import Text.ParserCombinators.Parsec hiding (State)
 data Command = Grouper Int |
                CommandList [Command] |
                Noop |
+               Summer Int |
                StdDever Int |
+               Maxer Int |
+               Minner Int |
                Averager Int deriving (Show)
 
 source = "(stdin)"
@@ -30,6 +33,9 @@ command2Function :: Command -> (GroupedCSV -> GroupedCSV)
 command2Function (Grouper x)      = regroupGroupedCSV x
 command2Function (Averager x)     = summarizeCSV avgBy x
 command2Function (StdDever x)     = summarizeCSV stddevBy x
+command2Function (Maxer x)        = summarizeCSV maxBy x
+command2Function (Minner x)       = summarizeCSV minBy x
+command2Function (Summer x)       = summarizeCSV sumBy x
 command2Function (Noop)           = id
 command2Function (CommandList xs) = foldl (.) id (map command2Function $ reverse xs)
 
@@ -46,7 +52,11 @@ parseTransformer f s =
      terminator
      return $ f $ read groupIx
 
-commandSummarizePossibilities = (try $ parseTransformer Averager "avg") <|> (try $ parseTransformer StdDever "stddev")
+commandSummarizePossibilities = (try $ parseTransformer Summer "sum") <|>
+                                (try $ parseTransformer Minner "min") <|>
+                                (try $ parseTransformer Maxer "max") <|>
+                                (try $ parseTransformer Averager "avg") <|>
+                                (try $ parseTransformer StdDever "stddev")
 
 commandGroupPossibilities = try $ parseTransformer Grouper "group"
 
@@ -94,8 +104,22 @@ type Summarizer = Int -> PossibleNumberCSV -> Double
 extractColumn :: Int -> PossibleNumberCSV -> [Double]
 extractColumn i lst = lst^..traverse.ix i^..traverse.numCSV
 
--- 2 dimensional average over CSV
--- Throws an error if the user tries to summarize by a string
+------------------------------------
+-- Summarizer
+-- 
+
+minBy :: Summarizer
+minBy i lst = minimum column
+  where column = extractColumn i lst
+
+maxBy :: Summarizer
+maxBy i lst = maximum column
+  where column = extractColumn i lst
+
+sumBy :: Summarizer
+sumBy i lst = foldl (+) 0 column
+  where column = extractColumn i lst
+
 avgBy :: Summarizer
 avgBy i lst = flip (/) len $ summed
   where len = (fromIntegral $ length column) :: Double
@@ -117,14 +141,14 @@ csvToPossibleNumbers csv = mapped %~ mapped %~ string2PossibleNumber $ csv
 -- Summarizing CSV values
 --
 
-type SummarizeResult = Maybe Double
+type SummarizeResult = [Maybe Double]
 
 summarizeDefault :: SummarizeResult
-summarizeDefault = Nothing
+summarizeDefault = []
 
 summarize :: Summarizer -> Int -> GroupedCSVRow -> GroupedCSVRow
 summarize f d (CSVGroup xs) = CSVGroup $ map (summarize f d) xs
-summarize f d (CSVContent _ csv_to_summarize) = CSVContent (Just (f d csv_to_summarize)) csv_to_summarize
+summarize f d (CSVContent xs csv_to_summarize) = CSVContent (xs ++ [ (Just $ f d csv_to_summarize) ]) csv_to_summarize 
 
 summarizeCSV :: Summarizer -> Int -> GroupedCSV -> GroupedCSV
 summarizeCSV f d = map (summarize f d)
@@ -138,8 +162,8 @@ type GroupedCSV    = [ GroupedCSVRow ]
 
 instance Show GroupedCSVRow where
   show (CSVContent r p) = possibleNumberCSVToString p ++ (summary2string r)
-    where summary2string Nothing = ""
-          summary2string (Just x) = "\n" ++ (show x) ++ "\n"
+    where summary2string [] = ""
+          summary2string xs = (intercalate " " $ map (show.fromJust) xs) ++ "\n"
   show (CSVGroup   g) = intercalate "\n" (map show g)
 
 rowEquivalence :: (a -> a -> t) -> Int -> [a] -> [a] -> t

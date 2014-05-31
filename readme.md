@@ -2,7 +2,22 @@
 
 A command line dsl for transforming csv files.
 
-Currently csvp supports the ``` group ```, ``` avg ```, and ``` stddev ``` commands.
+The structure of a ```csvp``` command is typically one or more group commands followed by one or
+more summary commands.
+
+Group commands a simply ```group n``` where n is a column number.
+
+Summary commands are made up of a summary type and a column number.
+
+*Current summary types*
+
+<table>
+  <tr><td>sum</td></tr>
+  <tr><td>max</td></tr>
+  <tr><td>min</td></tr>
+  <tr><td>stddev</td></tr>
+  <tr><td>avg</td></tr>
+</table>
 
 ###Simple Example
 
@@ -20,7 +35,7 @@ jim,deposit,100
 
 To group by name, then subgroup by transaction type, then summarize by value, you'd simply run:
 
-``` cat test.csv | ./CSVPivot 'group 0; group 1; avg 2;' ```
+``` cat test.csv | ./CSVPivot 'group 0; group 1; avg 2; stddev 2;' ```
 
 <pre>
 bob,deposit,10.0
