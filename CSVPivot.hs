@@ -109,16 +109,13 @@ extractColumn i lst = lst^..traverse.ix i^..traverse.numCSV
 -- 
 
 minBy :: Summarizer
-minBy i lst = minimum column
-  where column = extractColumn i lst
+minBy i lst = minimum $ extractColumn i lst
 
 maxBy :: Summarizer
-maxBy i lst = maximum column
-  where column = extractColumn i lst
+maxBy i lst = maximum $ extractColumn i lst
 
 sumBy :: Summarizer
-sumBy i lst = foldl (+) 0 column
-  where column = extractColumn i lst
+sumBy i lst = foldl (+) 0 $ extractColumn i lst
 
 avgBy :: Summarizer
 avgBy i lst = flip (/) len $ summed
