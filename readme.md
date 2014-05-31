@@ -5,7 +5,7 @@ A command line dsl for transforming csv files.
 The structure of a ```csvp``` command is typically one or more group commands followed by one or
 more summary commands.
 
-Group commands a simply ```group n``` where n is a column number.
+Group commands are simply ```group n``` where n is a column number.
 
 Summary commands are made up of a summary type and a column number.
 
