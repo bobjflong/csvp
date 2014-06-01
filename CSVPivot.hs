@@ -115,7 +115,7 @@ maxBy :: Summarizer
 maxBy i lst = maximum $ extractColumn i lst
 
 sumBy :: Summarizer
-sumBy i lst = foldl (+) 0 $ extractColumn i lst
+sumBy i lst = sum $ extractColumn i lst
 
 avgBy :: Summarizer
 avgBy i lst = flip (/) len $ summed
@@ -160,7 +160,7 @@ type GroupedCSV    = [ GroupedCSVRow ]
 instance Show GroupedCSVRow where
   show (CSVContent r p) = possibleNumberCSVToString p ++ (summary2string r)
     where summary2string [] = ""
-          summary2string xs = (intercalate " " $ map (show.fromJust) xs) ++ "\n"
+          summary2string xs = "= " ++ (intercalate " " $ map (show.fromJust) xs) ++ "\n"
   show (CSVGroup   g) = intercalate "\n" (map show g)
 
 rowEquivalence :: (a -> a -> t) -> Int -> [a] -> [a] -> t
