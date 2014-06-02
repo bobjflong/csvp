@@ -29,7 +29,7 @@ data Command = Grouper Int |
 
 source = "(stdin)"
 
-command2Function :: Command -> (GroupedCSV -> GroupedCSV)
+command2Function ::      Command -> (GroupedCSV -> GroupedCSV)
 command2Function (Grouper x)      = regroupGroupedCSV x
 command2Function (Averager x)     = summarizeCSV avgBy x
 command2Function (StdDever x)     = summarizeCSV stddevBy x
@@ -62,8 +62,8 @@ commandGroupPossibilities = try $ parseTransformer Grouper "group"
 
 parseCommands :: GenParser Char st Command
 parseCommands =
-  do groupResult <- many $ commandGroupPossibilities
-     summarizeResult <- many $ commandSummarizePossibilities
+  do groupResult <- many commandGroupPossibilities
+     summarizeResult <- many commandSummarizePossibilities
      return $ CommandList $ groupResult ++ summarizeResult
 
 parseCommandsFromArgs :: [String] -> [Either ParseError Command]
@@ -118,7 +118,7 @@ sumBy :: Summarizer
 sumBy i lst = sum $ extractColumn i lst
 
 avgBy :: Summarizer
-avgBy i lst = flip (/) len $ summed
+avgBy i lst = flip (/) len summed
   where len = (fromIntegral $ length column) :: Double
         summed = sum column
         column = extractColumn i lst
@@ -145,7 +145,7 @@ summarizeDefault = []
 
 summarize :: Summarizer -> Int -> GroupedCSVRow -> GroupedCSVRow
 summarize f d (CSVGroup xs) = CSVGroup $ map (summarize f d) xs
-summarize f d (CSVContent xs csv_to_summarize) = CSVContent (xs ++ [ (Just $ f d csv_to_summarize) ]) csv_to_summarize 
+summarize f d (CSVContent xs csv_to_summarize) = CSVContent (xs ++ [ Just $ f d csv_to_summarize ]) csv_to_summarize 
 
 summarizeCSV :: Summarizer -> Int -> GroupedCSV -> GroupedCSV
 summarizeCSV f d = map (summarize f d)
@@ -160,11 +160,11 @@ type GroupedCSV    = [ GroupedCSVRow ]
 instance Show GroupedCSVRow where
   show (CSVContent r p) = possibleNumberCSVToString p ++ (summary2string r)
     where summary2string [] = ""
-          summary2string xs = "= " ++ (intercalate " " $ map (show.fromJust) xs) ++ "\n"
+          summary2string xs = "= " ++ (unwords $ map (show.fromJust) xs) ++ "\n"
   show (CSVGroup   g) = intercalate "\n" (map show g)
 
 rowEquivalence :: (a -> a -> t) -> Int -> [a] -> [a] -> t
-rowEquivalence f x = \l r ->  f (l!!x) (r!!x)
+rowEquivalence f x l r = f (l!!x) (r!!x)
 
 groupByCSVIndex :: Int -> PossibleNumberCSV -> [ GroupedCSVRow ]
 groupByCSVIndex x p = map (CSVContent summarizeDefault) $ groupBy (rowEquivalence (==) x) $ sortBy (rowEquivalence compare x) p
@@ -180,7 +180,7 @@ regroupGroupedCSVRow x (CSVContent _ p) = CSVGroup $ groupByCSVIndex x p
 regroupGroupedCSVRow x (CSVGroup   g) = CSVGroup $ map (regroupGroupedCSVRow x) g
 
 regroupGroupedCSV :: Int -> GroupedCSV -> GroupedCSV
-regroupGroupedCSV x p = map (regroupGroupedCSVRow x) p
+regroupGroupedCSV x = map (regroupGroupedCSVRow x)
 
 ------------------------------------
 -- Grouping and summarizing multiple
@@ -190,8 +190,7 @@ type CSVTransformState = State GroupedCSV GroupedCSV
 
 transformCSV :: [Either ParseError Command] -> CSVTransformState
 transformCSV [] =
-  do result <- get
-     return result
+  do get
 transformCSV (x:xs) =
   do case x of
        Left _ -> error "Invalid command list"
@@ -208,7 +207,7 @@ transformCSV (x:xs) =
 main =
   do csv <- getContents
      case parseStdinCSV csv of
-      Left err -> do hPutStr stderr $ show err
+      Left err -> hPutStr stderr $ show err
       Right parsed -> do
         instructions <- getArgs
         let commands = parseCommandsFromArgs instructions
