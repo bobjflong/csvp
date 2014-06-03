@@ -6,7 +6,6 @@ import Control.Lens
 import Control.Lens.Prism
 import System.Environment
 import Text.CSV
-import Debug.Trace
 import System.IO
 import Data.Maybe
 import Data.List (groupBy, sortBy, delete, intercalate)
@@ -52,12 +51,14 @@ parseTransformer f s =
      terminator
      return $ f $ read groupIx
 
+commandSummarizePossibilities :: GenParser Char st Command
 commandSummarizePossibilities = (try $ parseTransformer Summer "sum") <|>
                                 (try $ parseTransformer Minner "min") <|>
                                 (try $ parseTransformer Maxer "max") <|>
                                 (try $ parseTransformer Averager "avg") <|>
                                 (try $ parseTransformer StdDever "stddev")
 
+commandGroupPossibilities :: GenParser Char st Command
 commandGroupPossibilities = try $ parseTransformer Grouper "group"
 
 parseCommands :: GenParser Char st Command
@@ -167,7 +168,8 @@ rowEquivalence :: (a -> a -> t) -> Int -> [a] -> [a] -> t
 rowEquivalence f x l r = f (l!!x) (r!!x)
 
 groupByCSVIndex :: Int -> PossibleNumberCSV -> [ GroupedCSVRow ]
-groupByCSVIndex x p = map (CSVContent summarizeDefault) $ groupBy (rowEquivalence (==) x) $ sortBy (rowEquivalence compare x) p
+groupByCSVIndex x p = map (CSVContent summarizeDefault) grouped
+  where grouped = groupBy (rowEquivalence (==) x) $ sortBy (rowEquivalence compare x) p
 
 csvToGroupedCSV :: PossibleNumberCSV -> GroupedCSV
 csvToGroupedCSV x = [ CSVContent summarizeDefault x ]

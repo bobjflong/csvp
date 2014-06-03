@@ -2,3 +2,4 @@
 *.o
 CSVPivot
 *.swp
+*.sublime-project
