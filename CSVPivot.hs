@@ -28,7 +28,7 @@ data Command = Grouper Int |
 
 source = "(stdin)"
 
-command2Function ::      Command -> (GroupedCSV -> GroupedCSV)
+command2Function ::      Command -> GroupedCSV -> GroupedCSV
 command2Function (Grouper x)      = regroupGroupedCSV x
 command2Function (Averager x)     = summarizeCSV avgBy x
 command2Function (StdDever x)     = summarizeCSV stddevBy x
