@@ -4,3 +4,4 @@ CSVPivot
 *.swp
 *.sublime-project
 Main
+dist/
