@@ -12,7 +12,7 @@ import Data.List (groupBy, sortBy, delete, intercalate)
 
 ------------------------------------
 -- Parsing the DSL for manipulating CSVs
--- eg. 'groupby 2; groupby 1; avg 3;'
+-- eg. 'group 2; group 1; avg 3;'
 --
 
 import Text.ParserCombinators.Parsec hiding (State)
@@ -72,8 +72,8 @@ parseCommandsFromArgs = map performParse
   where performParse arg = parse parseCommands source (arg ++ ";")
 
 ------------------------------------
--- Parsing the CSV and manipulating it
---
+-- CSVs are parsed and turned into a [[PossibleNumber]]
+-- PossibleNumbers encapsulate the idea that a cell can be textual or numeric data
 
 parseStdinCSV csv = parseCSV source csv
 
@@ -88,6 +88,12 @@ possibleNumberCSVToString :: PossibleNumberCSV -> String
 possibleNumberCSVToString x = unlines $ map (intercalate ",") rows
   where rows = map (map possibleNumberToString) x
 
+csvToPossibleNumbers :: CSV -> PossibleNumberCSV
+csvToPossibleNumbers csv = mapped %~ mapped %~ string2PossibleNumber $ csv
+
+------------------------------------
+-- Allow us to go to and fro between PossibleNumbers and Doubles 
+--
 numCSV :: Simple Prism PossibleNumber Double
 numCSV = prism (\x -> (Right x) :: PossibleNumber) $ \ i ->
   case i of
@@ -105,7 +111,7 @@ extractColumn :: Int -> PossibleNumberCSV -> [Double]
 extractColumn i lst = lst^..traverse.ix i^..traverse.numCSV
 
 ------------------------------------
--- Summarizer
+-- Currently implemented summarizer functions
 -- 
 
 minBy :: Summarizer
@@ -131,11 +137,9 @@ stddevBy i lst = sqrt $ (/) summed len
         fromAvg = map ((**2).(flip (-) avg)) column
         column = extractColumn i lst
 
-csvToPossibleNumbers :: CSV -> PossibleNumberCSV
-csvToPossibleNumbers csv = mapped %~ mapped %~ string2PossibleNumber $ csv
 
 ------------------------------------
--- Summarizing CSV values
+-- Mapping summarizers over data, accumulating results
 --
 
 type SummarizeResult = [Maybe Double]
@@ -151,8 +155,8 @@ summarizeCSV :: Summarizer -> Int -> GroupedCSV -> GroupedCSV
 summarizeCSV f d = map (summarize f d)
 
 ------------------------------------
---  Grouping CSVs
---
+--  CSVs can be grouped, then subgrouped
+--  GoupedCSVRows are either content with summarizer results | or a pointer to another subgroup
 
 data GroupedCSVRow = CSVContent SummarizeResult PossibleNumberCSV | CSVGroup GroupedCSV
 type GroupedCSV    = [ GroupedCSVRow ]
@@ -184,7 +188,7 @@ regroupGroupedCSV :: Int -> GroupedCSV -> GroupedCSV
 regroupGroupedCSV x = map (regroupGroupedCSVRow x)
 
 ------------------------------------
--- Grouping and summarizing multiple
+-- Statefully transform the CSV with the given commands
 --
 
 type CSVTransformState = State GroupedCSV GroupedCSV
