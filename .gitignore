@@ -5,3 +5,4 @@ CSVPivot
 *.sublime-project
 Main
 dist/
+csvp
