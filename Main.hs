@@ -17,14 +17,14 @@ import Data.List (groupBy, sortBy, delete, intercalate)
 
 import Text.ParserCombinators.Parsec hiding (State)
 
-data Command = Grouper Int |
-               CommandList [Command] |
-               Noop |
-               Summer Int |
-               StdDever Int |
-               Maxer Int |
-               Minner Int |
-               Averager Int deriving (Show, Eq)
+data Command = Grouper Int 
+               | CommandList [Command] 
+               | Noop 
+               | Summer Int 
+               | StdDever Int 
+               | Maxer Int 
+               | Minner Int 
+               | Averager Int deriving (Show, Eq)
 
 source = "(stdin)"
 
