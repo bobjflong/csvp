@@ -9,7 +9,7 @@ Group commands are simply ```group n``` where n is a column number.
 
 Summary commands are made up of a summary type and a column number.
 
-*Current summary types*
+__Current summary types__
 
 <table>
   <tr><td>sum</td></tr>
