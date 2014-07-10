@@ -35,7 +35,7 @@ jim,deposit,100
 
 To group by name, then subgroup by transaction type, then summarize by value, you'd simply run:
 
-``` cat test.csv | csvp 'group 0; group 1; avg 2; stddev 2; max 2; sum 2;'   ```
+``` <test.csv | csvp 'group 0; group 1; avg 2; stddev 2; max 2; sum 2;'   ```
 
 <pre>
 +-------------------------------------+----------+-------+ 
