@@ -8,6 +8,7 @@ import System.Environment
 import Text.CSV
 import System.IO
 import Data.Maybe
+import Data.Either
 import Data.List (groupBy, sortBy, delete, intercalate)
 
 ------------------------------------
@@ -81,8 +82,7 @@ type PossibleNumber = Either String Double
 type PossibleNumberCSV = [[PossibleNumber]]
 
 possibleNumberToString :: PossibleNumber -> String
-possibleNumberToString (Left x) = x
-possibleNumberToString (Right x) = show x
+possibleNumberToString = either id show
 
 possibleNumberCSVToString :: PossibleNumberCSV -> String
 possibleNumberCSVToString x = unlines $ map (intercalate ",") rows
