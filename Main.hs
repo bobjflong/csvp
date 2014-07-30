@@ -17,18 +17,18 @@ import Data.List (groupBy, sortBy, delete, intercalate)
 
 import Text.ParserCombinators.Parsec hiding (State)
 
-data Command = Grouper Int 
-               | CommandList [Command] 
-               | Noop 
-               | Summer Int 
-               | StdDever Int 
-               | Maxer Int 
-               | Minner Int 
+data Command = Grouper Int
+               | CommandList [Command]
+               | Noop
+               | Summer Int
+               | StdDever Int
+               | Maxer Int
+               | Minner Int
                | Averager Int deriving (Show, Eq)
 
 source = "(stdin)"
 
-command2Function ::      Command -> GroupedCSV -> GroupedCSV
+command2Function :: Command -> GroupedCSV -> GroupedCSV
 command2Function (Grouper x)      = regroupGroupedCSV x
 command2Function (Averager x)     = summarizeCSV avgBy x
 command2Function (StdDever x)     = summarizeCSV stddevBy x
@@ -92,7 +92,7 @@ csvToPossibleNumbers :: CSV -> PossibleNumberCSV
 csvToPossibleNumbers csv = mapped %~ mapped %~ string2PossibleNumber $ csv
 
 ------------------------------------
--- Allow us to go to and fro between PossibleNumbers and Doubles 
+-- Allow us to go to and fro between PossibleNumbers and Doubles
 --
 numCSV :: Simple Prism PossibleNumber Double
 numCSV = prism (\x -> (Right x) :: PossibleNumber) $ \ i ->
@@ -112,7 +112,7 @@ extractColumn i lst = lst^..traverse.ix i^..traverse.numCSV
 
 ------------------------------------
 -- Currently implemented summarizer functions
--- 
+--
 
 minBy :: Summarizer
 minBy i lst = minimum $ extractColumn i lst
@@ -149,7 +149,7 @@ summarizeDefault = []
 
 summarize :: Summarizer -> Int -> GroupedCSVRow -> GroupedCSVRow
 summarize f d (CSVGroup xs) = CSVGroup $ map (summarize f d) xs
-summarize f d (CSVContent xs csv_to_summarize) = CSVContent (xs ++ [ Just $ f d csv_to_summarize ]) csv_to_summarize 
+summarize f d (CSVContent xs csv_to_summarize) = CSVContent (xs ++ [ Just $ f d csv_to_summarize ]) csv_to_summarize
 
 summarizeCSV :: Summarizer -> Int -> GroupedCSV -> GroupedCSV
 summarizeCSV f d = map (summarize f d)
