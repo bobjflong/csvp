@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, OverlappingInstances #-}
 
 module Main where
 
@@ -81,12 +82,12 @@ parseStdinCSV csv = parseCSV source csv
 type PossibleNumber = Either String Double
 type PossibleNumberCSV = [[PossibleNumber]]
 
-possibleNumberToString :: PossibleNumber -> String
-possibleNumberToString = either id show
+instance Show PossibleNumber where
+  show = either id show
 
-possibleNumberCSVToString :: PossibleNumberCSV -> String
-possibleNumberCSVToString x = unlines $ map (intercalate ",") rows
-  where rows = map (map possibleNumberToString) x
+instance Show PossibleNumberCSV where
+  show x = unlines $ map (intercalate ",") rows
+    where rows = map (map show) x
 
 csvToPossibleNumbers :: CSV -> PossibleNumberCSV
 csvToPossibleNumbers csv = mapped %~ mapped %~ string2PossibleNumber $ csv
@@ -162,7 +163,7 @@ data GroupedCSVRow = CSVContent SummarizeResult PossibleNumberCSV | CSVGroup Gro
 type GroupedCSV    = [ GroupedCSVRow ]
 
 instance Show GroupedCSVRow where
-  show (CSVContent r p) = possibleNumberCSVToString p ++ (summary2string r)
+  show (CSVContent r p) = show p ++ (summary2string r)
     where summary2string [] = ""
           summary2string xs = "= " ++ (unwords $ map (show.fromJust) xs) ++ "\n"
   show (CSVGroup   g) = intercalate "\n" (map show g)
