@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, OverlappingInstances #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, OverlappingInstances, MultiParamTypeClasses #-}
 
 module Main where
 
@@ -31,7 +31,7 @@ data Command = Grouper Int
 source = "(stdin)"
 
 command2Function :: Command -> GroupedCSV -> GroupedCSV
-command2Function (Grouper x)      = regroupGroupedCSV x
+command2Function (Grouper x)      = regroup x
 command2Function (Averager x)     = summarizeCSV avgBy x
 command2Function (StdDever x)     = summarizeCSV stddevBy x
 command2Function (Maxer x)        = summarizeCSV maxBy x
@@ -149,44 +149,49 @@ summarizeDefault :: SummarizeResult
 summarizeDefault = []
 
 summarize :: Summarizer -> Int -> GroupedCSVRow -> GroupedCSVRow
-summarize f d (CSVGroup xs) = CSVGroup $ map (summarize f d) xs
+summarize f d (CSVGroup xs) = CSVGroup $ GroupedCSV $ map (summarize f d) (rows xs)
 summarize f d (CSVContent xs csv_to_summarize) = CSVContent (xs ++ [ Just $ f d csv_to_summarize ]) csv_to_summarize
 
 summarizeCSV :: Summarizer -> Int -> GroupedCSV -> GroupedCSV
-summarizeCSV f d = map (summarize f d)
+summarizeCSV f d csv = GroupedCSV $ map (summarize f d) (rows csv)
 
 ------------------------------------
 --  CSVs can be grouped, then subgrouped
 --  GoupedCSVRows are either content with summarizer results | or a pointer to another subgroup
 
 data GroupedCSVRow = CSVContent SummarizeResult PossibleNumberCSV | CSVGroup GroupedCSV
-type GroupedCSV    = [ GroupedCSVRow ]
+
+newtype GroupedCSV    = GroupedCSV {
+  rows :: [ GroupedCSVRow ]
+}
+
+instance Show GroupedCSV where
+  show = (intercalate "").(map show).rows
 
 instance Show GroupedCSVRow where
   show (CSVContent r p) = show p ++ (summary2string r)
     where summary2string [] = ""
           summary2string xs = "= " ++ (unwords $ map (show.fromJust) xs) ++ "\n"
-  show (CSVGroup   g) = intercalate "\n" (map show g)
+  show (CSVGroup   g) = intercalate "\n" (map show (rows g))
 
-rowEquivalence :: (a -> a -> t) -> Int -> [a] -> [a] -> t
-rowEquivalence f x l r = f (l!!x) (r!!x)
+class GroupableByIndex a b where
+  regroup :: Int -> a -> b
 
-groupByCSVIndex :: Int -> PossibleNumberCSV -> [ GroupedCSVRow ]
-groupByCSVIndex x p = map (CSVContent summarizeDefault) grouped
-  where grouped = groupBy (rowEquivalence (==) x) $ sortBy (rowEquivalence compare x) p
+instance GroupableByIndex GroupedCSV GroupedCSV where
+  regroup x csv = GroupedCSV $ map (regroup x) (rows csv)
+
+instance GroupableByIndex GroupedCSVRow GroupedCSVRow where
+  regroup x (CSVContent _ p) = CSVGroup $ GroupedCSV $ regroup x p
+  regroup x (CSVGroup   g) = CSVGroup $ GroupedCSV $ map (regroup x) (rows g) 
+
+instance GroupableByIndex PossibleNumberCSV [ GroupedCSVRow ] where
+  regroup x p = map (CSVContent summarizeDefault) grouped
+    where grouped = groupBy (rowEquivalence (==) x) $ sortBy (rowEquivalence compare x) p
+          rowEquivalence :: (a -> a -> t) -> Int -> [a] -> [a] -> t
+          rowEquivalence f x l r = f (l!!x) (r!!x)
 
 csvToGroupedCSV :: PossibleNumberCSV -> GroupedCSV
-csvToGroupedCSV x = [ CSVContent summarizeDefault x ]
-
-groupedCSVToString :: GroupedCSV -> String
-groupedCSVToString x = intercalate "" $ map show x
-
-regroupGroupedCSVRow :: Int -> GroupedCSVRow -> GroupedCSVRow
-regroupGroupedCSVRow x (CSVContent _ p) = CSVGroup $ groupByCSVIndex x p
-regroupGroupedCSVRow x (CSVGroup   g) = CSVGroup $ map (regroupGroupedCSVRow x) g
-
-regroupGroupedCSV :: Int -> GroupedCSV -> GroupedCSV
-regroupGroupedCSV x = map (regroupGroupedCSVRow x)
+csvToGroupedCSV x = GroupedCSV $ [ CSVContent summarizeDefault x ]
 
 ------------------------------------
 -- Statefully transform the CSV with the given commands
@@ -219,5 +224,5 @@ main =
         let commands = parseCommandsFromArgs instructions
         let parsedClean = delete [""] parsed
         let res = csvToGroupedCSV $ csvToPossibleNumbers parsedClean
-        putStrLn $ groupedCSVToString $ evalState (transformCSV commands) res
+        putStrLn $ show $ evalState (transformCSV commands) res
         return ()
