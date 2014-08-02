@@ -109,7 +109,7 @@ string2PossibleNumber str = case (reads str) :: [(Double, String)] of
 type Summarizer = Int -> PossibleNumberCSV -> Double
 
 extractColumn :: Int -> PossibleNumberCSV -> [Double]
-extractColumn i lst = lst^..traverse.ix i^..traverse.numCSV
+extractColumn i lst = lst^..traverse.ix i.numCSV
 
 ------------------------------------
 -- Currently implemented summarizer functions
