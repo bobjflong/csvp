@@ -30,15 +30,18 @@ data Command = Grouper Int
 
 source = "(stdin)"
 
-command2Function :: Command -> GroupedCSV -> GroupedCSV
-command2Function (Grouper x)      = regroup x
-command2Function (Averager x)     = summarizeCSV avgBy x
-command2Function (StdDever x)     = summarizeCSV stddevBy x
-command2Function (Maxer x)        = summarizeCSV maxBy x
-command2Function (Minner x)       = summarizeCSV minBy x
-command2Function (Summer x)       = summarizeCSV sumBy x
-command2Function (Noop)           = id
-command2Function (CommandList xs) = foldl (.) id (map command2Function $ reverse xs)
+class ToCSVProcessor a where
+  toCSVProcessor :: a -> GroupedCSV -> GroupedCSV
+
+instance ToCSVProcessor Command where
+  toCSVProcessor (Grouper x)      = regroup x
+  toCSVProcessor (Averager x)     = summarizeCSV avgBy x
+  toCSVProcessor (StdDever x)     = summarizeCSV stddevBy x
+  toCSVProcessor (Maxer x)        = summarizeCSV maxBy x
+  toCSVProcessor (Minner x)       = summarizeCSV minBy x
+  toCSVProcessor (Summer x)       = summarizeCSV sumBy x
+  toCSVProcessor (Noop)           = id
+  toCSVProcessor (CommandList xs) = foldl (.) id (map toCSVProcessor $ reverse xs)
 
 separator  = many $ char ' '
 userIndex  = many $ digit
@@ -207,7 +210,7 @@ transformCSV (x:xs) =
        Left _ -> error "Invalid command list"
        Right cmd ->
          do result <- get
-            let command = command2Function cmd
+            let command = toCSVProcessor cmd
             put $ command result
             transformCSV xs
 
