@@ -5,6 +5,7 @@ module Main where
 import Control.Monad.State
 import Control.Lens
 import Control.Lens.Prism
+import Data.String
 import System.Environment
 import Text.CSV
 import System.IO
@@ -93,7 +94,7 @@ instance Show PossibleNumberCSV where
     where rows = map (map show) x
 
 csvToPossibleNumbers :: CSV -> PossibleNumberCSV
-csvToPossibleNumbers csv = mapped %~ mapped %~ string2PossibleNumber $ csv
+csvToPossibleNumbers csv = mapped %~ mapped %~ fromString $ csv
 
 ------------------------------------
 -- Allow us to go to and fro between PossibleNumbers and Doubles
@@ -104,10 +105,10 @@ numCSV = prism (\x -> (Right x) :: PossibleNumber) $ \ i ->
     Left _ -> error "Error: could not convert column to number"
     Right x -> Right x
 
-string2PossibleNumber :: String -> PossibleNumber
-string2PossibleNumber str = case (reads str) :: [(Double, String)] of
-  [(a, "")] -> review numCSV a
-  _         -> Left str
+instance IsString PossibleNumber where
+  fromString str = case (reads str) :: [(Double, String)] of
+    [(a, "")] -> review numCSV a
+    _         -> Left str
 
 type Summarizer = Int -> PossibleNumberCSV -> Double
 
