@@ -165,9 +165,7 @@ summarizeCSV f d csv = GroupedCSV $ map (summarize f d) (rows csv)
 
 data GroupedCSVRow = CSVContent SummarizeResult PossibleNumberCSV | CSVGroup GroupedCSV
 
-newtype GroupedCSV    = GroupedCSV {
-  rows :: [ GroupedCSVRow ]
-}
+newtype GroupedCSV = GroupedCSV { rows :: [ GroupedCSVRow ] }
 
 instance Show GroupedCSV where
   show = (intercalate "").(map show).rows
