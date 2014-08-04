@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, OverlappingInstances, MultiParamTypeClasses #-}
+{-# OPTIONS_GHC -O2 #-}
 
 module Main where
 
