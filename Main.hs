@@ -86,12 +86,6 @@ parseStdinCSV csv = parseCSV source csv
 type PossibleNumber = Either String Double
 type PossibleNumberCSV = [[PossibleNumber]]
 
-instance Show PossibleNumber where
-  show = either id show
-
-instance Show PossibleNumberCSV where
-  show x = unlines $ map (intercalate ",") rows
-    where rows = map (map show) x
 
 csvToPossibleNumbers :: CSV -> PossibleNumberCSV
 csvToPossibleNumbers csv = mapped %~ mapped %~ fromString $ csv
@@ -171,9 +165,12 @@ instance Show GroupedCSV where
   show = (intercalate "").(map show).rows
 
 instance Show GroupedCSVRow where
-  show (CSVContent r p) = show p ++ (summary2string r)
+  show (CSVContent r p) = showPossibleNumberCSV ++ (summary2string r)
     where summary2string [] = ""
           summary2string xs = "= " ++ (unwords $ map (show.fromJust) xs) ++ "\n"
+          showPossibleNumberCSV = unlines $ map (intercalate ",") rows
+          rows = map (map (either id show)) p
+
   show (CSVGroup   g) = intercalate "\n" (map show (rows g))
 
 class GroupableByIndex a b where
