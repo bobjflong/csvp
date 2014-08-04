@@ -86,7 +86,6 @@ parseStdinCSV csv = parseCSV source csv
 type PossibleNumber = Either String Double
 type PossibleNumberCSV = [[PossibleNumber]]
 
-
 csvToPossibleNumbers :: CSV -> PossibleNumberCSV
 csvToPossibleNumbers csv = mapped %~ mapped %~ fromString $ csv
 
