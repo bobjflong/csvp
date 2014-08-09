@@ -10,6 +10,7 @@ import Data.String
 import System.Environment
 import Text.CSV
 import System.IO
+import Data.Monoid
 import Data.Maybe
 import Data.Either
 import Data.List (groupBy, sortBy, delete, intercalate)
@@ -29,6 +30,13 @@ data Command = Grouper Int
                | Maxer Int
                | Minner Int
                | Averager Int deriving (Show, Eq)
+
+instance Monoid Command where
+  mempty = Noop
+  mappend (CommandList x) (CommandList y) = CommandList $ x ++ y
+  mappend (CommandList x) y = CommandList $ x ++ [y]
+  mappend y (CommandList x) = CommandList $ [y] ++ x
+  mappend x y = CommandList [x, y]
 
 source = "(stdin)"
 
@@ -72,7 +80,7 @@ parseCommands :: GenParser Char st Command
 parseCommands =
   do groupResult <- many commandGroupPossibilities
      summarizeResult <- many commandSummarizePossibilities
-     return $ CommandList $ groupResult ++ summarizeResult
+     return $ mconcat $ groupResult ++ summarizeResult
 
 parseCommandsFromArgs :: [String] -> [Either ParseError Command]
 parseCommandsFromArgs = map performParse
@@ -181,7 +189,7 @@ instance GroupableByIndex GroupedCSV GroupedCSV where
 
 instance GroupableByIndex GroupedCSVRow GroupedCSVRow where
   regroup x (CSVContent _ p) = CSVGroup $ GroupedCSV $ regroup x p
-  regroup x (CSVGroup   g) = CSVGroup $ GroupedCSV $ map (regroup x) (rows g) 
+  regroup x (CSVGroup   g) = CSVGroup $ GroupedCSV $ map (regroup x) (rows g)
 
 instance GroupableByIndex PossibleNumberCSV [ GroupedCSVRow ] where
   regroup x p = map (CSVContent summarizeDefault) grouped
