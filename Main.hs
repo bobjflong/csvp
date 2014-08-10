@@ -5,14 +5,12 @@ module Main where
 
 import Control.Monad.State
 import Control.Lens
-import Control.Lens.Prism
 import Data.String
 import System.Environment
 import Text.CSV
 import System.IO
 import Data.Monoid
 import Data.Maybe
-import Data.Either
 import Data.List (groupBy, sortBy, delete, intercalate)
 
 ------------------------------------
@@ -58,12 +56,12 @@ userIndex  = many $ digit
 terminator = char ';'
 
 parseTransformer f s =
-  do separator
-     string s
-     separator
+  do _ <- separator
+     _ <- string s
+     _ <- separator
      groupIx <- userIndex
-     separator
-     terminator
+     _ <- separator
+     _ <- terminator
      return $ f $ read groupIx
 
 commandSummarizePossibilities :: GenParser Char st Command
