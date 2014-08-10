@@ -36,8 +36,6 @@ instance Monoid Command where
   mappend y (CommandList x) = CommandList $ [y] ++ x
   mappend x y = CommandList [x, y]
 
-source = "(stdin)"
-
 class ToCSVProcessor a where
   toCSVProcessor :: a -> GroupedCSV -> GroupedCSV
 
@@ -82,13 +80,13 @@ parseCommands =
 
 parseCommandsFromArgs :: [String] -> [Either ParseError Command]
 parseCommandsFromArgs = map performParse
-  where performParse arg = parse parseCommands source (arg ++ ";")
+  where performParse arg = parse parseCommands "(stdin)" (arg ++ ";")
 
 ------------------------------------
 -- CSVs are parsed and turned into a [[PossibleNumber]]
 -- PossibleNumbers encapsulate the idea that a cell can be textual or numeric data
 
-parseStdinCSV csv = parseCSV source csv
+parseStdinCSV csv = parseCSV "(stdin)" csv
 
 type PossibleNumber = Either String Double
 type PossibleNumberCSV = [[PossibleNumber]]
