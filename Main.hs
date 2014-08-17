@@ -11,6 +11,7 @@ import Text.CSV
 import System.IO
 import Data.Monoid
 import Data.Maybe
+import qualified Data.Text as T
 import Data.List (groupBy, sortBy, delete, intercalate)
 
 ------------------------------------
@@ -88,7 +89,7 @@ parseCommandsFromArgs = map performParse
 
 parseStdinCSV csv = parseCSV "(stdin)" csv
 
-type PossibleNumber = Either String Double
+type PossibleNumber = Either T.Text Double
 type PossibleNumberCSV = [[PossibleNumber]]
 
 csvToPossibleNumbers :: CSV -> PossibleNumberCSV
@@ -106,7 +107,7 @@ numCSV = prism (\x -> (Right x) :: PossibleNumber) $ \ i ->
 instance IsString PossibleNumber where
   fromString str = case (reads str) :: [(Double, String)] of
     [(a, "")] -> review numCSV a
-    _         -> Left str
+    _         -> Left $ T.pack str
 
 type Summarizer = Int -> PossibleNumberCSV -> Double
 
@@ -173,7 +174,7 @@ instance Show GroupedCSVRow where
     where summary2string [] = ""
           summary2string xs = "= " ++ (unwords $ map (show.fromJust) xs) ++ "\n"
           showPossibleNumberCSV = unlines $ map (intercalate ",") rows
-          rows = map (map (either id show)) p
+          rows = map (map (either T.unpack show)) p
 
   show (CSVGroup   g) = intercalate "\n" (map show (rows g))
 
