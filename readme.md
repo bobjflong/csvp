@@ -17,6 +17,7 @@ __Current summary types__
   <tr><td>min</td></tr>
   <tr><td>stddev</td></tr>
   <tr><td>avg</td></tr>
+  <tr><td>count</td></tr>
 </table>
 
 ###Simple Example
