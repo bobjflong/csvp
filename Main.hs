@@ -28,6 +28,7 @@ data Command = Grouper Int
                | StdDever Int
                | Maxer Int
                | Minner Int
+               | Counter Int
                | Averager Int deriving (Show, Eq)
 
 instance Monoid Command where
@@ -47,6 +48,7 @@ instance ToCSVProcessor Command where
   toCSVProcessor (Maxer x)        = summarizeCSV maxBy x
   toCSVProcessor (Minner x)       = summarizeCSV minBy x
   toCSVProcessor (Summer x)       = summarizeCSV sumBy x
+  toCSVProcessor (Counter x)      = summarizeCSV countBy x
   toCSVProcessor (Noop)           = id
   toCSVProcessor (CommandList xs) = foldl (.) id (map toCSVProcessor $ reverse xs)
 
@@ -68,6 +70,7 @@ commandSummarizePossibilities = (try $ parseTransformer Summer "sum") <|>
                                 (try $ parseTransformer Minner "min") <|>
                                 (try $ parseTransformer Maxer "max") <|>
                                 (try $ parseTransformer Averager "avg") <|>
+                                (try $ parseTransformer Counter "count") <|>
                                 (try $ parseTransformer StdDever "stddev")
 
 commandGroupPossibilities :: GenParser Char st Command
@@ -141,6 +144,10 @@ stddevBy i lst = sqrt $ (/) summed len
         fromAvg = map ((**2).(flip (-) avg)) column
         column = extractColumn i lst
 
+countBy :: Summarizer
+countBy i lst = len
+  where len = (fromIntegral $ length column) :: Double
+        column = extractColumn i lst
 
 ------------------------------------
 -- Mapping summarizers over data, accumulating results
