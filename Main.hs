@@ -4,15 +4,17 @@
 module Main where
 
 import Control.Monad.State
-import Control.Lens
+import Control.Lens hiding ((.=))
 import Data.String
 import System.Environment
 import Text.CSV
 import System.IO
 import Data.Monoid
+import Data.Aeson
 import Data.Maybe
 import qualified Data.Text as T
 import Data.List (groupBy, sortBy, delete, intercalate)
+import qualified Data.ByteString.Lazy.Char8 as BSL
 
 ------------------------------------
 -- Parsing the DSL for manipulating CSVs
@@ -82,8 +84,8 @@ parseCommands =
      summarizeResult <- many commandSummarizePossibilities
      return $ mconcat $ groupResult ++ summarizeResult
 
-parseCommandsFromArgs :: [String] -> [Either ParseError Command]
-parseCommandsFromArgs = map performParse
+parseCommandsFromArgs :: String -> Either ParseError Command
+parseCommandsFromArgs = performParse
   where performParse arg = parse parseCommands "(stdin)" (arg ++ ";")
 
 ------------------------------------
@@ -173,13 +175,27 @@ data GroupedCSVRow = CSVContent SummarizeResult PossibleNumberCSV | CSVGroup Gro
 
 newtype GroupedCSV = GroupedCSV { rows :: [ GroupedCSVRow ] }
 
+instance ToJSON GroupedCSV where
+  toJSON gcsv = object [(T.pack "group") .= (map toJSON (rows gcsv))]
+
+blankOrShowJust :: (Show a) => (Maybe a) -> String
+blankOrShowJust Nothing = ""
+blankOrShowJust (Just x) = show x
+
+instance ToJSON GroupedCSVRow where
+  toJSON (CSVGroup gcsv) = toJSON gcsv
+  toJSON (CSVContent r p) = object [
+    (T.pack "rows") .= rows,
+    (T.pack "summary") .= (map (blankOrShowJust) r)]
+    where rows = map (map (either T.unpack show)) p
+
 instance Show GroupedCSV where
   show = (intercalate "").(map show).rows
 
 instance Show GroupedCSVRow where
   show (CSVContent r p) = showPossibleNumberCSV ++ (summary2string r)
     where summary2string [] = ""
-          summary2string xs = "= " ++ (unwords $ map (show.fromJust) xs) ++ "\n"
+          summary2string xs = "= " ++ (unwords $ map (blankOrShowJust) xs) ++ "\n"
           showPossibleNumberCSV = unlines $ map (intercalate ",") rows
           rows = map (map (either T.unpack show)) p
 
@@ -204,23 +220,11 @@ instance GroupableByIndex PossibleNumberCSV [ GroupedCSVRow ] where
 csvToGroupedCSV :: PossibleNumberCSV -> GroupedCSV
 csvToGroupedCSV x = GroupedCSV $ [ CSVContent summarizeDefault x ]
 
-------------------------------------
--- Statefully transform the CSV with the given commands
---
-
-type CSVTransformState = State GroupedCSV GroupedCSV
-
-transformCSV :: [Either ParseError Command] -> CSVTransformState
-transformCSV [] =
-  do get
-transformCSV (x:xs) =
+transformCSV :: Either ParseError Command -> GroupedCSV -> GroupedCSV
+transformCSV x res =
   do case x of
        Left _ -> error "Invalid command list"
-       Right cmd ->
-         do result <- get
-            let command = toCSVProcessor cmd
-            put $ command result
-            transformCSV xs
+       Right cmd -> let command = toCSVProcessor cmd in command res
 
 ------------------------------------
 -- Main
@@ -231,9 +235,11 @@ main =
      case parseStdinCSV csv of
       Left err -> hPutStr stderr $ show err
       Right parsed -> do
-        instructions <- getArgs
+        (instructions:options) <- getArgs
         let commands = parseCommandsFromArgs instructions
         let parsedClean = delete [""] parsed
         let res = csvToGroupedCSV $ csvToPossibleNumbers parsedClean
-        putStrLn $ show $ evalState (transformCSV commands) res
+        case options of
+          [] -> do putStrLn $ show $ transformCSV commands res
+          ["--json"] -> do putStrLn $ BSL.unpack.encode $ toJSON $ transformCSV commands res
         return ()
