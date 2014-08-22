@@ -92,5 +92,5 @@ You can now also supply a `--json` switch:
       ]
     },
     ...
-```json
+```
 
