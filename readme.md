@@ -65,34 +65,32 @@ You can now also supply a `--json` switch:
 
 ``` <test.csv | csvp 'group 0; avg 2; count 2;' --json ```
 
-<pre>
-{
-  "group": [
+```json
+[
+  [
     {
-      "group": [
-        {
-          "rows": [
-            [
-              "bob",
-              "deposit",
-              "10.0"
-            ],
-            [
-              "bob",
-              "withdraw",
-              "15.0"
-            ],
-            [
-              "bob",
-              "deposit",
-              "5.0"
-            ]
-          ],
-          "summary": [
-            "10.0",
-            "3.0"
-          ]
-        },
-        ...
-</pre>
+      "rows": [
+        [
+          "bob",
+          "deposit",
+          "10.0"
+        ],
+        [
+          "bob",
+          "withdraw",
+          "15.0"
+        ],
+        [
+          "bob",
+          "deposit",
+          "5.0"
+        ]
+      ],
+      "summary": [
+        "10.0",
+        "3.0"
+      ]
+    },
+    ...
+```json
 

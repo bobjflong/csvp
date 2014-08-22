@@ -176,7 +176,7 @@ data GroupedCSVRow = CSVContent SummarizeResult PossibleNumberCSV | CSVGroup Gro
 newtype GroupedCSV = GroupedCSV { rows :: [ GroupedCSVRow ] }
 
 instance ToJSON GroupedCSV where
-  toJSON gcsv = object [(T.pack "group") .= (map toJSON (rows gcsv))]
+  toJSON gcsv = toJSON (map toJSON (rows gcsv))
 
 blankOrShowJust :: (Show a) => (Maybe a) -> String
 blankOrShowJust Nothing = ""
