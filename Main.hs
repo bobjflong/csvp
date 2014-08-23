@@ -40,19 +40,16 @@ instance Monoid Command where
   mappend y (CommandList x) = CommandList $ [y] ++ x
   mappend x y = CommandList [x, y]
 
-class ToCSVProcessor a where
-  toCSVProcessor :: a -> GroupedCSV -> GroupedCSV
-
-instance ToCSVProcessor Command where
-  toCSVProcessor (Grouper x)      = regroup x
-  toCSVProcessor (Averager x)     = summarizeCSV avgBy x
-  toCSVProcessor (StdDever x)     = summarizeCSV stddevBy x
-  toCSVProcessor (Maxer x)        = summarizeCSV maxBy x
-  toCSVProcessor (Minner x)       = summarizeCSV minBy x
-  toCSVProcessor (Summer x)       = summarizeCSV sumBy x
-  toCSVProcessor (Counter x)      = summarizeCSV countBy x
-  toCSVProcessor (Noop)           = id
-  toCSVProcessor (CommandList xs) = foldl (.) id (map toCSVProcessor $ reverse xs)
+toCSVProcessor :: Command -> GroupedCSV -> GroupedCSV
+toCSVProcessor (Grouper x)      = regroup x
+toCSVProcessor (Averager x)     = summarizeCSV avgBy x
+toCSVProcessor (StdDever x)     = summarizeCSV stddevBy x
+toCSVProcessor (Maxer x)        = summarizeCSV maxBy x
+toCSVProcessor (Minner x)       = summarizeCSV minBy x
+toCSVProcessor (Summer x)       = summarizeCSV sumBy x
+toCSVProcessor (Counter x)      = summarizeCSV countBy x
+toCSVProcessor (Noop)           = id
+toCSVProcessor (CommandList xs) = foldl (.) id (map toCSVProcessor $ reverse xs)
 
 separator  = many $ char ' '
 userIndex  = many $ digit
