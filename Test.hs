@@ -34,7 +34,10 @@ tests = TestList [  TestLabel "Basic Command Lists" basicCommandListParsing
 
 runTests = runTestTT tests
 
-main = runTests
+main = do putStrLn "\n[Tests]\n"
+          runTests
+          putStrLn "\n[Properties]\n"
+          runPropertyChecks
 
 csvTransform :: String -> M.Command -> IO String
 csvTransform csv commands =
@@ -66,5 +69,6 @@ commandIdentity :: M.Command -> Bool
 commandIdentity = (\a -> (e <> a == a <> e) && (a <> e == a))
   where e = mempty
 
+runPropertyChecks = quickCheck commandAssociativity >> quickCheck commandIdentity
 
 
