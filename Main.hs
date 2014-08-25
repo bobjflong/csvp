@@ -35,6 +35,8 @@ data Command = Grouper Int
 
 instance Monoid Command where
   mempty = Noop
+  mappend x Noop = x
+  mappend Noop x = x
   mappend (CommandList x) (CommandList y) = CommandList $ x ++ y
   mappend (CommandList x) y = CommandList $ x ++ [y]
   mappend y (CommandList x) = CommandList $ [y] ++ x
