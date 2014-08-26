@@ -71,4 +71,3 @@ commandIdentity = (\a -> (e <> a == a <> e) && (a <> e == a))
 
 runPropertyChecks = quickCheck commandAssociativity >> quickCheck commandIdentity
 
-

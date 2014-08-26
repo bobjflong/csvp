@@ -241,4 +241,6 @@ main =
         case options of
           [] -> do putStrLn $ show $ transformCSV commands res
           ["--json"] -> do putStrLn $ BSL.unpack.encode $ toJSON $ transformCSV commands res
+          x -> do hPutStr stderr $ "Unknown output type: " ++ (concat x)
         return ()
+
