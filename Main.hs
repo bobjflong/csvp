@@ -178,8 +178,7 @@ instance ToJSON GroupedCSV where
   toJSON gcsv = toJSON (map toJSON (rows gcsv))
 
 blankOrShowJust :: (Show a) => (Maybe a) -> String
-blankOrShowJust Nothing = ""
-blankOrShowJust (Just x) = show x
+blankOrShowJust = maybe "" show
 
 instance ToJSON GroupedCSVRow where
   toJSON (CSVGroup gcsv) = toJSON gcsv
