@@ -70,7 +70,7 @@ commandIdentity = (\a -> (e <> a == a <> e) && (a <> e == a))
   where e = mempty
 
 commandConcat :: [M.Command] -> Bool
-commandConcat x = (mconcat x) == foldr mappend mempty x
+commandConcat x = mconcat x == foldr mappend mempty x
 
 runPropertyChecks = quickCheck commandAssociativity >> quickCheck commandIdentity >> quickCheck commandConcat
 
