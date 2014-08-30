@@ -69,5 +69,8 @@ commandIdentity :: M.Command -> Bool
 commandIdentity = (\a -> (e <> a == a <> e) && (a <> e == a))
   where e = mempty
 
-runPropertyChecks = quickCheck commandAssociativity >> quickCheck commandIdentity
+commandConcat :: [M.Command] -> Bool
+commandConcat x = (mconcat x) == foldr mappend mempty x
+
+runPropertyChecks = quickCheck commandAssociativity >> quickCheck commandIdentity >> quickCheck commandConcat
 
