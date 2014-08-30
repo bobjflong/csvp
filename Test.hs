@@ -52,14 +52,15 @@ csvTransform csv commands =
 -- Properties
 
 instance Arbitrary M.Command where
-  arbitrary = elements [ M.CommandList [M.Noop]
+  arbitrary = do index <- (arbitrary :: Gen Int)
+                 elements [ M.CommandList [M.Noop]
                        , M.Noop
-                       , M.Summer 1
-                       , M.StdDever 1
-                       , M.Maxer 1
-                       , M.Minner 1
-                       , M.Counter 1
-                       , M.Averager 1
+                       , M.Summer index
+                       , M.StdDever index
+                       , M.Maxer index
+                       , M.Minner index
+                       , M.Counter index
+                       , M.Averager index
                        ]
 
 commandAssociativity :: M.Command -> M.Command -> M.Command -> Bool
