@@ -16,11 +16,6 @@ import qualified Data.Text as T
 import Data.List (groupBy, sortBy, delete, intercalate)
 import qualified Data.ByteString.Lazy.Char8 as BSL
 
-------------------------------------
--- Parsing the DSL for manipulating CSVs
--- eg. 'group 2; group 1; avg 3;'
---
-
 import Text.ParserCombinators.Parsec hiding (State)
 
 data Command = Grouper Int
@@ -223,10 +218,6 @@ transformCSV x res =
   do case x of
        Left _ -> error "Invalid command list"
        Right cmd -> let command = toCSVProcessor cmd in command res
-
-------------------------------------
--- Main
---
 
 main =
   do csv <- getContents
