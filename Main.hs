@@ -3,7 +3,6 @@
 
 module Main where
 
-import Control.Monad.State
 import Control.Lens hiding ((.=))
 import Data.String
 import System.Environment
@@ -11,7 +10,6 @@ import Text.CSV
 import System.IO
 import Data.Monoid
 import Data.Aeson
-import Data.Maybe
 import qualified Data.Text as T
 import Data.List (groupBy, sortBy, delete, intercalate)
 import qualified Data.ByteString.Lazy.Char8 as BSL
