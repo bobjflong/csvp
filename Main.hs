@@ -35,17 +35,6 @@ instance Monoid Command where
   mappend y (CommandList x) = CommandList $ [y] ++ x
   mappend x y = CommandList [x, y]
 
-toCSVProcessor :: Command -> GroupedCSV -> GroupedCSV
-toCSVProcessor (Grouper x)      = regroup x
-toCSVProcessor (Averager x)     = summarizeCSV avgBy x
-toCSVProcessor (StdDever x)     = summarizeCSV stddevBy x
-toCSVProcessor (Maxer x)        = summarizeCSV maxBy x
-toCSVProcessor (Minner x)       = summarizeCSV minBy x
-toCSVProcessor (Summer x)       = summarizeCSV sumBy x
-toCSVProcessor (Counter x)      = summarizeCSV countBy x
-toCSVProcessor (Noop)           = id
-toCSVProcessor (CommandList xs) = foldl (.) id (map toCSVProcessor $ reverse xs)
-
 separator  = many $ char ' '
 userIndex  = many $ digit
 terminator = char ';'
@@ -79,6 +68,17 @@ parseCommands =
 parseCommandsFromArgs :: String -> Either ParseError Command
 parseCommandsFromArgs = performParse
   where performParse arg = parse parseCommands "(stdin)" (arg ++ ";")
+
+toCSVProcessor :: Command -> GroupedCSV -> GroupedCSV
+toCSVProcessor (Grouper x)      = regroup x
+toCSVProcessor (Averager x)     = summarizeCSV avgBy x
+toCSVProcessor (StdDever x)     = summarizeCSV stddevBy x
+toCSVProcessor (Maxer x)        = summarizeCSV maxBy x
+toCSVProcessor (Minner x)       = summarizeCSV minBy x
+toCSVProcessor (Summer x)       = summarizeCSV sumBy x
+toCSVProcessor (Counter x)      = summarizeCSV countBy x
+toCSVProcessor (Noop)           = id
+toCSVProcessor (CommandList xs) = foldl (.) id (map toCSVProcessor $ reverse xs)
 
 ------------------------------------
 -- CSVs are parsed and turned into a [[PossibleNumber]]
