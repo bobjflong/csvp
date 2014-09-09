@@ -10,7 +10,7 @@ import Text.CSV
 import System.IO
 import Data.Monoid
 import Data.Aeson
-import Data.Maybe (catMaybes, fromMaybe)
+import Data.Maybe (catMaybes, fromMaybe, fromJust)
 import qualified Data.Text as T
 import Data.List (groupBy, sortBy, delete, intercalate)
 import qualified Data.ByteString.Lazy.Char8 as BSL
@@ -109,7 +109,7 @@ instance IsString PossibleNumber where
     [(a, "")] -> Right a
     _         -> Left $ T.pack str
 
-type Summarizer = Int -> PossibleNumberCSV -> Double
+type Summarizer = Int -> PossibleNumberCSV -> Maybe Double
 
 extractColumn :: Int -> PossibleNumberCSV -> [Double]
 extractColumn i lst = catMaybes $ lst^..traverse.ix i.numCSV
@@ -118,31 +118,35 @@ extractColumn i lst = catMaybes $ lst^..traverse.ix i.numCSV
 -- Currently implemented summarizer functions
 --
 
+nothingIfEmpty :: ([t] -> a) -> [t] -> Maybe a
+nothingIfEmpty _ [] = Nothing
+nothingIfEmpty f x = Just $ f x
+
 minBy :: Summarizer
-minBy i lst = minimum $ extractColumn i lst
+minBy i lst = nothingIfEmpty minimum $ extractColumn i lst
 
 maxBy :: Summarizer
-maxBy i lst = maximum $ extractColumn i lst
+maxBy i lst = nothingIfEmpty maximum $ extractColumn i lst
 
 sumBy :: Summarizer
-sumBy i lst = sum $ extractColumn i lst
+sumBy i lst = nothingIfEmpty sum $ extractColumn i lst
 
 avgBy :: Summarizer
-avgBy i lst = flip (/) len summed
+avgBy i lst = Just $ flip (/) len summed
   where len = (fromIntegral $ length column) :: Double
         summed = sum column
         column = extractColumn i lst
 
 stddevBy :: Summarizer
-stddevBy i lst = sqrt $ (/) summed len
+stddevBy i lst = Just $ sqrt $ (/) summed len
   where avg = avgBy i lst
         summed = sum fromAvg
         len = (fromIntegral $ length column) :: Double
-        fromAvg = map ((**2).(flip (-) avg)) column
+        fromAvg = map ((**2).(flip (-) (fromJust avg))) column
         column = extractColumn i lst
 
 countBy :: Summarizer
-countBy i lst = len
+countBy i lst = Just len
   where len = (fromIntegral $ length column) :: Double
         column = extractColumn i lst
 
@@ -157,7 +161,7 @@ summarizeDefault = []
 
 summarize :: Summarizer -> Int -> GroupedCSVRow -> GroupedCSVRow
 summarize f d (CSVGroup xs) = CSVGroup $ GroupedCSV $ map (summarize f d) (rows xs)
-summarize f d (CSVContent xs csv_to_summarize) = CSVContent (xs ++ [ Just $ f d csv_to_summarize ]) csv_to_summarize
+summarize f d (CSVContent xs csv_to_summarize) = CSVContent (xs ++ [ f d csv_to_summarize ]) csv_to_summarize
 
 summarizeCSV :: Summarizer -> Int -> GroupedCSV -> GroupedCSV
 summarizeCSV f d csv = GroupedCSV $ map (summarize f d) (rows csv)
