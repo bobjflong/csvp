@@ -10,11 +10,14 @@ import Text.CSV
 import System.IO
 import Data.Monoid
 import Data.Aeson
+import Data.Maybe (catMaybes, fromMaybe)
 import qualified Data.Text as T
 import Data.List (groupBy, sortBy, delete, intercalate)
 import qualified Data.ByteString.Lazy.Char8 as BSL
 
 import Text.ParserCombinators.Parsec hiding (State)
+
+type ErrorString = String
 
 data Command = Grouper Int
                | CommandList [Command]
@@ -95,21 +98,21 @@ csvToPossibleNumbers csv = mapped %~ mapped %~ fromString $ csv
 ------------------------------------
 -- Allow us to go to and fro between PossibleNumbers and Doubles
 --
-numCSV :: Simple Prism PossibleNumber Double
-numCSV = prism (\x -> (Right x) :: PossibleNumber) $ \ i ->
+numCSV :: Simple Prism PossibleNumber (Maybe Double)
+numCSV = prism (\(Just x) -> (Right x) :: PossibleNumber) $ \ i ->
   case i of
-    Left _ -> error "Error: could not convert column to number"
-    Right x -> Right x
+    Left _ -> Right Nothing
+    Right x -> Right $ Just x
 
 instance IsString PossibleNumber where
   fromString str = case (reads str) :: [(Double, String)] of
-    [(a, "")] -> review numCSV a
+    [(a, "")] -> Right a
     _         -> Left $ T.pack str
 
 type Summarizer = Int -> PossibleNumberCSV -> Double
 
 extractColumn :: Int -> PossibleNumberCSV -> [Double]
-extractColumn i lst = lst^..traverse.ix i.numCSV
+extractColumn i lst = catMaybes $ lst^..traverse.ix i.numCSV
 
 ------------------------------------
 -- Currently implemented summarizer functions
@@ -211,11 +214,11 @@ instance GroupableByIndex PossibleNumberCSV [ GroupedCSVRow ] where
 csvToGroupedCSV :: PossibleNumberCSV -> GroupedCSV
 csvToGroupedCSV x = GroupedCSV $ [ CSVContent summarizeDefault x ]
 
-transformCSV :: Either ParseError Command -> GroupedCSV -> GroupedCSV
+transformCSV :: Either ParseError Command -> GroupedCSV -> Either ErrorString GroupedCSV
 transformCSV x res =
   do case x of
-       Left _ -> error "Invalid command list"
-       Right cmd -> let command = toCSVProcessor cmd in command res
+       Left _ -> Left "Invalid command list"
+       Right cmd -> let command = toCSVProcessor cmd in Right $ command res
 
 main =
   do csv <- getContents
@@ -226,9 +229,11 @@ main =
         let commands = parseCommandsFromArgs instructions
         let parsedClean = delete [""] parsed
         let res = csvToGroupedCSV $ csvToPossibleNumbers parsedClean
-        case options of
-          [] -> do putStrLn $ show $ transformCSV commands res
-          ["--json"] -> do putStrLn $ BSL.unpack.encode $ toJSON $ transformCSV commands res
-          x -> do hPutStr stderr $ "Unknown output type: " ++ (concat x)
+        case transformCSV commands res of
+          Right transformed -> case options of
+                                 [] -> do putStrLn $ show $ transformed
+                                 ["--json"] -> do putStrLn $ BSL.unpack.encode $ toJSON $ transformed
+                                 x -> do hPutStr stderr $ "Unknown output type: " ++ (concat x)
+          Left err -> hPutStr stderr err
         return ()
 

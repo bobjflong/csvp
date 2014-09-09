@@ -39,17 +39,15 @@ main = do putStrLn "\n[Tests]\n"
           putStrLn "\n[Properties]\n"
           runPropertyChecks
 
+fromEither (Right x) = x
+
 csvTransform :: String -> M.Command -> IO String
 csvTransform csv commands =
   do case M.parseStdinCSV csv of
       Left err -> return "error parsing test csv"
       Right parsed -> do
         let res = M.csvToGroupedCSV $ M.csvToPossibleNumbers parsed
-        return $ show $ (M.transformCSV (Right commands) res)
-
-
-----------------------------------------------------------------------------------------------------------------------
--- Properties
+        return $ show $ (fromEither $ M.transformCSV (Right commands) res)
 
 instance Arbitrary M.Command where
   arbitrary = do index <- (arbitrary :: Gen Int)
