@@ -229,15 +229,17 @@ main =
      case parseStdinCSV csv of
       Left err -> hPutStr stderr $ show err
       Right parsed -> do
-        (instructions:options) <- getArgs
-        let commands = parseCommandsFromArgs instructions
-        let parsedClean = delete [""] parsed
-        let res = csvToGroupedCSV $ csvToPossibleNumbers parsedClean
-        case transformCSV commands res of
-          Right transformed -> case options of
-                                 [] -> do putStrLn $ show $ transformed
-                                 ["--json"] -> do putStrLn $ BSL.unpack.encode $ toJSON $ transformed
-                                 x -> do hPutStr stderr $ "Unknown output type: " ++ (concat x)
-          Left err -> hPutStr stderr err
-        return ()
+        arguments <- getArgs
+        case arguments of
+          (i:o) -> do let commands = parseCommandsFromArgs i
+                      let parsedClean = delete [""] parsed
+                      let res = csvToGroupedCSV $ csvToPossibleNumbers parsedClean
+                      case transformCSV commands res of
+                        Right t -> case o of
+                                               [] -> do putStrLn $ show $ t
+                                               ["--json"] -> do putStrLn $ BSL.unpack.encode $ toJSON $ t
+                                               x -> do hPutStr stderr $ "Unknown output type: " ++ (concat x)
+                        Left err -> hPutStr stderr err
+                      return ()
+          _ -> hPutStr stderr "Please specify some commands, eg 'group 0; avg 2;'"
 
