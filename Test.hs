@@ -27,12 +27,12 @@ twoGroupCSV = TestCase (assertEqual
                       "basic csv stats" "1.0,2.0,3.0\n4.0,5.0,3.0\n= 3.5\n\n6.0,7.0,8.0\n9.0,10.0,8.0\n= 8.5\n"
                       (unsafePerformIO (csvTransform  "1,2,3\n4,5,3\n6,7,8\n9,10,8" (M.CommandList [M.Grouper 2, M.Averager 1, M.Noop]))))
 
-tests = TestList [  TestLabel "Basic Command Lists" basicCommandListParsing
+testCases = TestList [  TestLabel "Basic Command Lists" basicCommandListParsing
                   , TestLabel "Multiple summarizers" multipleSummarizers
                   , TestLabel "Basic CSV stats gathering" basicCSV
                   , TestLabel "Basic two group CSV" twoGroupCSV]
 
-runTests = runTestTT tests
+runTests = runTestTT testCases
 
 main = do putStrLn "\n[Tests]\n"
           runTests
