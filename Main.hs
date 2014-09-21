@@ -14,6 +14,7 @@ import Data.Maybe (catMaybes, fromMaybe, fromJust)
 import qualified Data.Text as T
 import Data.List (groupBy, sortBy, delete, intercalate)
 import qualified Data.ByteString.Lazy.Char8 as BSL
+import System.Console.ArgParser
 
 import Text.ParserCombinators.Parsec hiding (State)
 
@@ -224,22 +225,26 @@ transformCSV x res =
        Left _ -> Left "Invalid command list"
        Right cmd -> let command = toCSVProcessor cmd in Right $ command res
 
-main =
+data CSVPArguments = CSVPArguments String String deriving (Show)
+
+csvpArgumentsParser :: ParserSpec CSVPArguments
+csvpArgumentsParser = CSVPArguments `parsedBy` reqPos "commands" `andBy` optPos "default" "output type"
+
+csvp (CSVPArguments i o) =
   do csv <- getContents
      case parseStdinCSV csv of
       Left err -> hPutStr stderr $ show err
       Right parsed -> do
-        arguments <- getArgs
-        case arguments of
-          (i:o) -> do let commands = parseCommandsFromArgs i
-                      let parsedClean = delete [""] parsed
-                      let res = csvToGroupedCSV $ csvToPossibleNumbers parsedClean
-                      case transformCSV commands res of
-                        Right t -> case o of
-                                               [] -> do putStrLn $ show $ t
-                                               ["--json"] -> do putStrLn $ BSL.unpack.encode $ toJSON $ t
-                                               x -> do hPutStr stderr $ "Unknown output type: " ++ (concat x)
-                        Left err -> hPutStr stderr err
-                      return ()
-          _ -> hPutStr stderr "Please specify some commands, eg 'group 0; avg 2;'"
+        let commands = parseCommandsFromArgs i
+        let parsedClean = delete [""] parsed
+        let res = csvToGroupedCSV $ csvToPossibleNumbers parsedClean
+        case transformCSV commands res of
+          Right t -> case o of
+            "default" -> do putStrLn $ show $ t
+            "json" -> do putStrLn $ BSL.unpack.encode $ toJSON $ t
+            x -> do hPutStr stderr $ "Unknown output type: " ++ x
+          Left err -> hPutStr stderr err
+        return ()
+
+main = withParseResult csvpArgumentsParser csvp
 

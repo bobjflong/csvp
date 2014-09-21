@@ -59,9 +59,9 @@ To group by name, then subgroup by transaction type, then summarize by value, yo
 </pre>
 
 
-You can also provide a `--json` switch if you prefer:
+You can also provide a `json` switch if you prefer:
 
-``` <test.csv | csvp 'group 0; avg 2; count 2;' --json ```
+``` <test.csv | csvp 'group 0; avg 2; count 2;' json ```
 
 ```json
 [
