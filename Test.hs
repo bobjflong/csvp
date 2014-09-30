@@ -2,6 +2,8 @@
 module Test where
 
 import qualified Main as M
+import qualified PossibleNumber as P
+import qualified Summarizer as S
 
 import Test.HUnit
 import Control.Monad.State
@@ -43,10 +45,10 @@ fromEither (Right x) = x
 
 csvTransform :: String -> M.Command -> IO String
 csvTransform csv commands =
-  do case M.parseStdinCSV csv of
+  do case P.parseStdinCSV csv of
       Left err -> return "error parsing test csv"
       Right parsed -> do
-        let res = M.csvToGroupedCSV $ M.csvToPossibleNumbers parsed
+        let res = S.csvToGroupedCSV $ P.csvToPossibleNumbers parsed
         return $ show $ (fromEither $ M.transformCSV (Right commands) res)
 
 instance Arbitrary M.Command where
