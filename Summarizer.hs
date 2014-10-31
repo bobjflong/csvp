@@ -1,4 +1,6 @@
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses  #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeSynonymInstances  #-}
 
 module Summarizer (
     minBy
@@ -14,12 +16,12 @@ module Summarizer (
   , csvToGroupedCSV
   ) where
 
-import PossibleNumber
-import Control.Lens hiding ((.=))
-import Data.Maybe
-import Data.Aeson
-import qualified Data.Text as T
-import Data.List (intercalate, groupBy, sortBy)
+import           Control.Lens   hiding ((.=))
+import           Data.Aeson
+import           Data.List      (groupBy, intercalate, sortBy)
+import           Data.Maybe
+import qualified Data.Text      as T
+import           PossibleNumber
 
 data GroupedCSVRow = CSVContent SummarizeResult PossibleNumberCSV | CSVGroup GroupedCSV
 

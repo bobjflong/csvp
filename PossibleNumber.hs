@@ -1,4 +1,5 @@
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 module PossibleNumber (
     csvToPossibleNumbers
@@ -7,10 +8,10 @@ module PossibleNumber (
   , parseStdinCSV
   ) where
 
-import Text.CSV
-import qualified Data.Text as T
-import Data.String
-import Control.Lens hiding ((.=))
+import           Control.Lens hiding ((.=))
+import           Data.String
+import qualified Data.Text    as T
+import           Text.CSV
 
 parseStdinCSV csv = parseCSV "(stdin)" csv
 

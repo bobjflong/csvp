@@ -1,24 +1,27 @@
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, OverlappingInstances, MultiParamTypeClasses #-}
-{-# OPTIONS_GHC -O2 #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverlappingInstances  #-}
+{-# LANGUAGE TypeSynonymInstances  #-}
 
 module Main where
 
-import Control.Lens hiding ((.=))
-import Data.String
-import System.Environment
-import Text.CSV
-import System.IO
-import Data.Monoid
-import Data.Aeson
-import Data.Maybe (catMaybes, fromMaybe, fromJust)
-import qualified Data.Text as T
-import Data.List (groupBy, sortBy, delete, intercalate)
-import qualified Data.ByteString.Lazy.Char8 as BSL
-import PossibleNumber
-import Summarizer
-import System.Console.ArgParser
+import           Control.Lens                  hiding ((.=))
+import           Data.Aeson
+import qualified Data.ByteString.Lazy.Char8    as BSL
+import           Data.List                     (delete, groupBy, intercalate,
+                                                sortBy)
+import           Data.Maybe                    (catMaybes, fromJust, fromMaybe)
+import           Data.Monoid
+import           Data.String
+import qualified Data.Text                     as T
+import           PossibleNumber
+import           Summarizer
+import           System.Console.ArgParser
+import           System.Environment
+import           System.IO
+import           Text.CSV
 
-import Text.ParserCombinators.Parsec hiding (State)
+import           Text.ParserCombinators.Parsec hiding (State)
 
 type ErrorString = String
 
