@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Summarizer (
     minBy
@@ -95,8 +96,8 @@ blankOrShowJust = maybe "" show
 instance ToJSON GroupedCSVRow where
   toJSON (CSVGroup gcsv) = toJSON gcsv
   toJSON (CSVContent r p) = object [
-    (T.pack "rows") .= rows,
-    (T.pack "summary") .= (map (blankOrShowJust) r)]
+    "rows" .= rows,
+    "summary" .= (map (blankOrShowJust) r)]
     where rows = map (map (either T.unpack show)) p
 
 instance Show GroupedCSV where
