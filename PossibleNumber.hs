@@ -3,7 +3,7 @@
 
 module PossibleNumber (
     csvToPossibleNumbers
-  , PossibleNumber
+  , PossibleNumber(..)
   , PossibleNumberCSV
   , parseStdinCSV
   ) where
@@ -15,7 +15,12 @@ import           Text.CSV
 
 parseStdinCSV csv = parseCSV "(stdin)" csv
 
-type PossibleNumber = Either T.Text Double
+data PossibleNumber = TextData T.Text | DoubleData Double deriving (Eq, Ord)
+
+instance Show PossibleNumber where
+  show (TextData t) = T.unpack t
+  show (DoubleData d) = show d
+
 type PossibleNumberCSV = [[PossibleNumber]]
 
 csvToPossibleNumbers :: CSV -> PossibleNumberCSV
@@ -23,5 +28,5 @@ csvToPossibleNumbers csv = mapped %~ mapped %~ fromString $ csv
 
 instance IsString PossibleNumber where
   fromString str = case (reads str) :: [(Double, String)] of
-    [(a, "")] -> Right a
-    _         -> Left $ T.pack str
+    [(a, "")] -> DoubleData a
+    _         -> TextData $ T.pack str

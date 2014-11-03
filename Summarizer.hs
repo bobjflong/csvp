@@ -27,10 +27,10 @@ import           PossibleNumber
 data GroupedCSVRow = CSVContent SummarizeResult PossibleNumberCSV | CSVGroup GroupedCSV
 
 numCSV :: Simple Prism PossibleNumber (Maybe Double)
-numCSV = prism (\(Just x) -> (Right x) :: PossibleNumber) $ \ i ->
+numCSV = prism (\(Just x) -> DoubleData x) $ \ i ->
   case i of
-    Left _ -> Right Nothing
-    Right x -> Right $ Just x
+    TextData _ -> Right Nothing
+    DoubleData x -> Right $ Just x
 
 type Summarizer = Int -> PossibleNumberCSV -> Maybe Double
 
@@ -98,7 +98,7 @@ instance ToJSON GroupedCSVRow where
   toJSON (CSVContent r p) = object [
     "rows" .= rows,
     "summary" .= (map (blankOrShowJust) r)]
-    where rows = map (map (either T.unpack show)) p
+    where rows = map (map show) p
 
 instance Show GroupedCSV where
   show = (intercalate "").(map show).rows
@@ -108,7 +108,7 @@ instance Show GroupedCSVRow where
     where summary2string [] = ""
           summary2string xs = "= " ++ (unwords $ map (blankOrShowJust) xs) ++ "\n"
           showPossibleNumberCSV = unlines $ map (intercalate ",") rows
-          rows = map (map (either T.unpack show)) p
+          rows = map (map show) p
 
   show (CSVGroup   g) = intercalate "\n" (map show (rows g))
 
