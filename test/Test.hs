@@ -13,9 +13,6 @@ import           Test.HUnit
 import           Test.QuickCheck
 import           Text.Parsec.Error
 
-{-
-  Command parsing
--}
 basicCommandListParsing = TestCase (assertEqual "basic command list" parsed fromStr)
   where fromStr = (^?_Right) $ M.parseCommandsFromArgs "group 0; group 1; avg 2;"
         parsed  = Just $ M.CommandList [M.Grouper 0, M.Grouper 1, M.Averager 2]
@@ -24,9 +21,6 @@ multipleSummarizers = TestCase (assertEqual "multiple summarizers" parsed fromSt
   where fromStr = (^?_Right) $ M.parseCommandsFromArgs $ "group 0; avg 2; stddev 2; max 2;"
         parsed  = Just $ M.CommandList [M.Grouper 0, M.Averager 2, M.StdDever 2, M.Maxer 2]
 
-{-
-  Group/Summary calculation
--}
 basicCSV = TestCase (
   assertEqual
   "basic csv stats with subgroups"
@@ -46,9 +40,6 @@ testCases = TestList [  TestLabel "Basic Command Lists" basicCommandListParsing
                   , TestLabel "Basic CSV stats gathering" basicCSV
                   , TestLabel "Basic two group CSV" twoGroupCSV]
 
-{-
-  Transform the CSV using csvp.Main
--}
 csvTransform :: String -> M.Command -> IO String
 csvTransform csv commands =
   do case P.parseStdinCSV csv of
@@ -59,9 +50,6 @@ csvTransform csv commands =
 
 runTests = runTestTT testCases
 
-{-
-  Properties
--}
 instance Arbitrary M.Command where
   arbitrary = do index <- (arbitrary :: Gen Int)
                  elements [ M.CommandList [M.Noop]
@@ -74,22 +62,13 @@ instance Arbitrary M.Command where
                        , M.Averager index
                        ]
 
-{-
-  Associativity for the Command Monoid
--}
 commandAssociativity :: M.Command -> M.Command -> M.Command -> Bool
 commandAssociativity = (\a b c -> (a <> b) <> c == a <> (b <> c))
 
-{-
-  Identity for the Command Monoid
--}
 commandIdentity :: M.Command -> Bool
 commandIdentity = (\a -> (e <> a == a <> e) && (a <> e == a))
   where e = mempty
 
-{-
-  Concatenation for the Command Monoid
--}
 commandConcat :: [M.Command] -> Bool
 commandConcat x = mconcat x == foldr mappend mempty x
 
