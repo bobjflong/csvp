@@ -1,6 +1,3 @@
-{-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-
 module PossibleNumber (
     csvToPossibleNumbers
   , PossibleNumber(..)

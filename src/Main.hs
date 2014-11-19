@@ -1,8 +1,3 @@
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverlappingInstances  #-}
-{-# LANGUAGE TypeSynonymInstances  #-}
-
 module Main where
 
 import           Control.Lens                  hiding ((.=))
