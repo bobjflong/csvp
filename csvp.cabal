@@ -19,11 +19,31 @@ executable csvp
   main-is:             Main.hs
   ghc-options:         -O2
   -- other-modules:
-  build-depends:       base ==4.7.*, mtl ==2.1.*, lens ==4.1.*, csv ==0.1.*, parsec ==3.1.*, HUnit==1.2.*, text, aeson, bytestring, QuickCheck, argparser
+  build-depends:       base < 5
+                       , mtl
+                       , lens
+                       , csv
+                       , parsec
+                       , HUnit
+                       , text
+                       , aeson
+                       , bytestring
+                       , QuickCheck
+                       , argparser
   hs-source-dirs:      src
 
 library
   hs-source-dirs:      src
   ghc-options:         -O2
   exposed-modules      Main, PossibleNumber, Summarizer
-  build-depends:       base ==4.7.*, mtl ==2.1.*, lens ==4.1.*, csv ==0.1.*, parsec ==3.1.*, HUnit==1.2.*, text, aeson, bytestring, QuickCheck, argparser
+  build-depends:       base < 5
+                       , mtl
+                       , lens
+                       , csv
+                       , parsec
+                       , HUnit
+                       , text
+                       , aeson
+                       , bytestring
+                       , QuickCheck
+                       , argparser

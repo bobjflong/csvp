@@ -18,7 +18,7 @@ import           Text.CSV
 
 import           Text.ParserCombinators.Parsec hiding (State)
 
-type ErrorString = String
+data RuntimeError = InvalidCommands deriving (Show)
 
 data Command = Grouper Int
                | CommandList [Command]
@@ -44,13 +44,16 @@ userIndex  = many $ digit
 terminator = char ';'
 
 parseTransformer f s =
-  do _ <- separator
-     _ <- string s
-     _ <- separator
-     groupIx <- userIndex
-     _ <- separator
-     _ <- terminator
-     return $ f $ read groupIx
+  do
+    _ <- separator
+    _ <- string s
+    _ <- separator
+    groupIx <- userIndex
+    _ <- separator
+    _ <- terminator
+    case (reads groupIx) :: [(Int, String)] of
+      [(x, "")] -> return (f x)     
+      _ -> fail (show InvalidCommands)
 
 commandSummarizePossibilities :: GenParser Char st Command
 commandSummarizePossibilities = (try $ parseTransformer Summer "sum") <|>
@@ -84,10 +87,10 @@ toCSVProcessor (Counter x)      = summarizeCSV countBy x
 toCSVProcessor (Noop)           = id
 toCSVProcessor (CommandList xs) = foldl (.) id (map toCSVProcessor $ reverse xs)
 
-transformCSV :: Either ParseError Command -> GroupedCSV -> Either ErrorString GroupedCSV
+transformCSV :: Either ParseError Command -> GroupedCSV -> Either RuntimeError GroupedCSV
 transformCSV x res =
   do case x of
-       Left _ -> Left "Invalid command list"
+       Left _ -> Left InvalidCommands
        Right cmd -> let command = toCSVProcessor cmd in Right $ command res
 
 data CSVPArguments = CSVPArguments String String deriving (Show)
@@ -108,7 +111,7 @@ csvp (CSVPArguments i o) =
             "default" -> do putStrLn $ show $ t
             "json" -> do putStrLn $ BSL.unpack.encode $ toJSON $ t
             x -> do hPutStr stderr $ "Unknown output type: " ++ x
-          Left err -> hPutStr stderr err
+          Left err -> hPutStr stderr (show err)
         return ()
 
 main = withParseResult csvpArgumentsParser csvp
